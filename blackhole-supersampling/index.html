@@ -1,0 +1,165 @@
+<div id="app">
+  <header class="head">
+    <div class="intro">
+      <h1>Quantum supersampling of supermassive black holes</h1>
+      <p class="byline">B. Kaganovitch and Y. Ivanov, University of Toronto. Qollab x IonQ Hackathon, October 2026.</p>
+      <p class="lede">A spinning, charged black hole is rendered pixel by pixel, each pixel the mean of 1024 traced light rays, and that mean is estimated at a fixed query budget either by averaging randomly drawn rays or by quantum amplitude estimation. The page shows where the quantum estimator wins, on the photon ring, the disk edges and the stars, and where it does not: on smooth regions, and on the stored rays themselves, which a classical computer can simply add up.</p>
+    </div>
+    <aside class="howto" aria-label="Usage">
+      <h2>Usage</h2>
+      <ol>
+        <li><b>Play</b> steps through the nine passes; both renders converge to the reference.</li>
+        <li>Clicking a pixel runs its amplitude-estimation circuits on the selected backend (Fig. 3).</li>
+        <li><b>Method</b> sets the right plate to the hybrid or to MLAE on every pixel; <b>Display</b> shows the image, the log error map, the reference, or the advantage map (where amplitude estimation overtakes random sampling).</li>
+      </ol>
+      <p class="keys"><span><kbd>Space</kbd> play</span><span><kbd>Left</kbd> <kbd>Right</kbd> pass</span><span><kbd>1</kbd>-<kbd>3</kbd> black hole</span><span><kbd>Shift</kbd> + arrows marker</span><span><kbd>Enter</kbd> run</span><span><kbd>Q</kbd> method</span><span><kbd>E</kbd> error map</span><span><kbd>T</kbd> reference</span><span><kbd>A</kbd> advantage map</span></p>
+    </aside>
+  </header>
+
+  <section class="console" aria-label="Controls">
+    <div class="presets" role="group" aria-label="Black hole">
+      <button class="preset" data-preset="cinematic" aria-pressed="true">Edge-on</button>
+      <button class="preset" data-preset="sgra" aria-pressed="false">Sgr A*</button>
+      <button class="preset" data-preset="charged" aria-pressed="false">Charged</button>
+    </div>
+    <p class="params" aria-label="Black hole parameters">
+      <span><i>a</i>/M = <b id="pA">0.9</b></span>
+      <span><i>Q</i>/M = <b id="pQ">0.3</b></span>
+      <span><i>i</i> = <b id="pI">80 deg</b></span>
+      <span><abbr title="Innermost stable circular orbit: inner edge of the disk">r<sub>ISCO</sub></abbr> = <b id="pR">1.98 M</b></span>
+      <span><abbr title="Angular size of one gravitational radius GM/c^2 for Sgr A* at 8.277 kpc (4.297 million solar masses)">&theta;<sub>g</sub></abbr> = <b>5.12 uas</b></span>
+    </p>
+  </section>
+
+  <figure class="fig fig1">
+    <div class="plates">
+      <div class="plate">
+        <p class="plabel"><span class="key-c" aria-hidden="true"></span><span id="labC">IID <abbr title="Monte Carlo: average of independently drawn rays">MC</abbr></span><span class="rmse"><abbr title="Root-mean-square error of pixel luminance against the reference">RMSE</abbr> <b id="rmseC">-</b></span></p>
+        <div class="screen"><canvas id="cvC" width="512" height="512" role="img" aria-label="Monte Carlo render at the current pass"></canvas></div>
+      </div>
+      <div class="plate">
+        <p class="plabel"><span class="key-q" aria-hidden="true"></span><span id="capQ">IID MC + MLAE</span><span class="rmse"><abbr title="Root-mean-square error">RMSE</abbr> <b id="rmseQ">-</b></span></p>
+        <div class="screen"><canvas id="cvQ" width="512" height="512" role="img" aria-label="Hybrid IID Monte Carlo plus MLAE render at the current pass"></canvas></div>
+      </div>
+    </div>
+    <div class="cbar" id="cbar" hidden>
+      <span class="cbar-ramp" aria-hidden="true"></span>
+      <span class="cbar-ticks" aria-hidden="true"><span>1e-5</span><span>1e-4</span><span>1e-3</span><span>1e-2</span><span>1e-1</span></span>
+      <span class="cbar-label">|estimate - reference| (luminance, log scale)</span>
+    </div>
+    <div class="cbar" id="abar" hidden>
+      <span class="cbar-ramp adv" aria-hidden="true"></span>
+      <span class="cbar-ticks" aria-hidden="true"><span>32</span><span>288</span><span>1.1k</span><span>4.3k</span><span>16.6k</span></span>
+      <span class="cbar-label">budget <i>N</i>* at which MLAE overtakes IID sampling, Eq. (9); dimmed: not within 16,608</span>
+    </div>
+    <div class="transport" aria-label="Passes">
+      <button id="play" class="primary" aria-label="Play or pause the passes">Play</button>
+      <div class="scrub">
+        <label for="pass">Pass <b id="passLabel">1</b> of 9, <i>N</i> = <b id="queryLabel">32</b> queries per pixel</label>
+        <input id="pass" type="range" min="1" max="9" value="9">
+        <div class="ticks" id="ticks" aria-hidden="true"></div>
+      </div>
+      <div class="views">
+        <fieldset class="view">
+          <legend>Method</legend>
+          <label><input type="radio" name="method" value="hybrid" checked> IID MC + MLAE</label>
+          <label><input type="radio" name="method" value="qae"> <abbr title="Amplitude estimation on every pixel, not only high-variance ones">MLAE only</abbr></label>
+        </fieldset>
+        <fieldset class="view">
+          <legend>Display</legend>
+          <label><input type="radio" name="display" value="image" checked> Image</label>
+          <label><input type="radio" name="display" value="error"> <abbr title="log10 of the absolute luminance error against the reference, per pixel">Error</abbr></label>
+          <label><input type="radio" name="display" value="ref"> <abbr title="Converged image: mean of all 1024 rays per pixel">Reference</abbr></label>
+          <label><input type="radio" name="display" value="adv"> <abbr title="Pixels where MLAE overtakes IID sampling within the query schedule, coloured by the crossover budget">Advantage</abbr></label>
+        </fieldset>
+      </div>
+    </div>
+    <figcaption><b>Fig. 1.</b> <span id="cap1">Progressive render.</span></figcaption>
+  </figure>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Convergence</h2></div>
+      <svg id="plot" viewBox="0 0 440 290" role="img" aria-label="Log-log plot of luminance RMSE against N; data table below"></svg>
+      <ul class="legend" id="legend"></ul>
+      <figcaption><b>Fig. 2.</b> Luminance RMSE against the query budget <i>N</i> per pixel (one seed). Solid: high-variance pixels, &sigma;&sup2;/(&mu;(1 &minus; &mu;)) &gt; 0.05 (<span id="edgeFrac"></span> of the image). Dashed: whole image. Dotted: finite table read without replacement, exact from <i>N</i> = 1024. IID Monte Carlo follows Eq. (4), MLAE Eq. (8); hybrid pixels on the MLAE branch use the pilot plus at most <i>N</i> &minus; 32 queries. <span id="renderNote"></span></figcaption>
+      <details><summary>Data table</summary><div class="tablewrap" id="plotTable"></div></details>
+    </figure>
+
+    <figure class="fig" id="inspCard">
+      <div class="figtitle-row">
+        <h2 class="figtitle">Single-pixel <abbr title="Maximum-likelihood amplitude estimation (Suzuki et al. 2020)">MLAE</abbr></h2>
+        <div class="pick">
+          <label for="px"><i>x</i></label><input id="px" type="number" min="0" max="255" value="128">
+          <label for="py"><i>y</i></label><input id="py" type="number" min="0" max="255" value="128">
+          <button id="runPx">Run</button>
+        </div>
+      </div>
+      <p class="status" id="inspStatus" role="status" aria-live="polite">Running the default pixel...</p>
+      <div id="insp" aria-live="polite"></div>
+      <figcaption><b>Fig. 3.</b> Live circuits on the selected backend for the marked pixel. Click a plate or enter coordinates. Hit rates follow Eq. (6); the fit, Eq. (7), gives the estimate.</figcaption>
+    </figure>
+  </div>
+
+  <section class="theory" aria-labelledby="intro">
+    <div class="theory-cols">
+    <h2 id="intro" class="theory-title">Introduction</h2>
+    <p>Shadows, reflections and gravitational lensing in computer graphics, optics and astronomy are commonly computed by ray tracing or path tracing, which assign each pixel the average of many light paths and are the standard for physically based images. The mean over a pixel's rays is a Monte Carlo integral. If the ray integrand can be evaluated coherently as an oracle, quantum amplitude estimation (Brassard et al. 2002) estimates it to precision &epsilon; with O(1/&epsilon;) oracle calls, against O(1/&epsilon;<sup>2</sup>) independent samples (Montanaro 2015); applied to rendering, this is quantum supersampling (Johnston 2016). Here the rays are precomputed, so the oracle encodes a finite table of 1024 values per pixel, which a classical computer can also average exactly in 1024 reads. The comparison with independent (IID) sampling therefore models a continuous integrand, and the finite-table baseline is shown beside it. We examine its query efficiency and its output on Kerr-Newman black holes with parameters motivated by the supermassive black hole Sagittarius A* (Sgr A*).</p>
+    <figure class="ehtfig">
+      <img id="eht" alt="Event Horizon Telescope image of Sgr A*: a bright, clumpy orange ring around a dark centre" width="480" height="480">
+      <figcaption><b>Fig. 4.</b> Sgr A* at 1.3 mm observed by the Event Horizon Telescope; ring diameter 51.8&nbsp;+/-&nbsp;2.3&nbsp;uas (EHT Collaboration 2022), resolution about 20&nbsp;uas. Image: EHT Collaboration, CC BY 4.0, via ESO (eso2208-eht-mwa).</figcaption>
+    </figure>
+
+    <h2 class="theory-title">Theory</h2>
+    <h3>1. Spacetime and rays</h3>
+    <p>In Boyer-Lindquist coordinates and geometric units (<i>G</i> = <i>c</i> = <i>M</i> = 1), the Kerr-Newman metric depends on the spin <i>a</i> and charge <i>Q</i> through</p>
+    <p class="eq" data-tex="\Sigma = r^2 + a^2\cos^2\theta, \qquad \Delta = r^2 - 2r + a^2 + Q^2"><span>&Sigma; = <i>r</i>&sup2; + <i>a</i>&sup2; cos&sup2;&theta;,&emsp; &Delta; = <i>r</i>&sup2; &minus; 2<i>r</i> + <i>a</i>&sup2; + <i>Q</i>&sup2;</span><span class="eqn">(1)</span></p>
+    <p>with outer horizon <i>r</i><sub>+</sub> = 1 + (1 &minus; <i>a</i>&sup2; &minus; <i>Q</i>&sup2;)<sup>1/2</sup>. Photons are uncharged and therefore follow null geodesics (d<i>s</i>&sup2; = 0) of the metric. The Hamiltonian separates as</p>
+    <p class="eq" data-tex="2\Sigma H = \Delta\, p_r^2 + p_\theta^2 + \left(\frac{L}{\sin\theta} - a\sin\theta\right)^{2} - \frac{(r^2 + a^2 - aL)^2}{\Delta} = 0"><span>2&Sigma;<i>H</i> = &Delta; <i>p<sub>r</sub></i>&sup2; + <i>p</i><sub>&theta;</sub>&sup2; + (<i>L</i>/sin&theta; &minus; <i>a</i> sin&theta;)&sup2; &minus; (<i>r</i>&sup2; + <i>a</i>&sup2; &minus; <i>aL</i>)&sup2;/&Delta; = 0</span><span class="eqn">(2)</span></p>
+    <p>with energy <i>E</i> = 1, axial angular momentum <i>L</i> and the Carter constant conserved. Rays are integrated backwards with fourth-order Runge-Kutta in Mino time &tau;, defined by d&lambda; = &Sigma; d&tau; with &lambda; the affine parameter, from a zero-angular-momentum observer at <i>r</i> = 40 until they cross the horizon, escape to <i>r</i> = 1000 (star field), or cross the disk plane. The traced shadow boundary agrees with the analytic photon-orbit boundary to 7&times;10<sup>&minus;4</sup> M; the Carter constant drifts by less than 4&times;10<sup>&minus;7</sup>.</p>
+
+    <h3>2. Disk emission</h3>
+    <p>We assume a geometrically thin, optically thin accretion disk between the innermost stable circular orbit and <i>r</i> = 10. Gas follows prograde circular orbits with angular velocity</p>
+    <p class="eq" data-tex="\Omega = \frac{\sqrt{r - Q^2}}{r^2 + a\sqrt{r - Q^2}}"><span>&Omega; = (<i>r</i> &minus; <i>Q</i>&sup2;)<sup>1/2</sup> / (<i>r</i>&sup2; + <i>a</i>(<i>r</i> &minus; <i>Q</i>&sup2;)<sup>1/2</sup>)</span><span class="eqn">(3)</span></p>
+    <p>A photon of angular momentum <i>L</i> emitted there is shifted in frequency by <i>g</i> = 1/(<i>u<sup>t</sup></i>(1 &minus; &Omega;<i>L</i>)). With <i>x</i> = <i>r</i><sub>ISCO</sub>/<i>r</i>, the emitted flux follows the thin-disk profile <i>F</i> &prop; <i>x</i>&sup3;(1 &minus; <i>x</i><sup>1/2</sup>) and the temperature <i>T</i> &prop; <i>F</i><sup>1/4</sup>; the observed brightness is <i>g</i>&#8308;<i>F</i> and the colour is the blackbody colour of <i>gT</i>. Here <i>g</i> is referred to a static observer at infinity, whereas rays start at a camera at finite radius; for the Sgr A* camera and <i>L</i> = 0 the two conventions differ by a factor 1.026 in <i>g</i> (1.108 in <i>g</i>&#8308;), so the shading is infinity-referred. The temperature scale, lane texture, filmic tone map and bloom filter are artistic and identical for every image shown.</p>
+
+    <h3>3. Pixel integral and Monte Carlo</h3>
+    <p>A pixel's luminance is the mean of its <i>S</i> = 1024 ray values <i>I<sub>j</sub></i> &isin; [0, 1], &mu; = <i>S</i><sup>&minus;1</sup> &Sigma;<sub><i>j</i></sub> <i>I<sub>j</sub></i>. Averaging <i>N</i> rays drawn at random gives an unbiased estimate <span class="m" data-tex="\hat\mu">&mu;&#770;</span> with root-mean-square error</p>
+    <p class="eq" data-tex="\epsilon_{\mathrm{MC}} = \sigma N^{-1/2}"><span>&epsilon;<sub>MC</sub> = &sigma; <i>N</i><sup>&minus;1/2</sup></span><span class="eqn">(4)</span></p>
+    <p>where &sigma;&sup2; is the variance of the <i>I<sub>j</sub></i> (IID sampling, the model of a continuous integrand). Reading the stored values without replacement instead gives <span class="m" data-tex="\epsilon_{\mathrm{fin}} = \sigma\sqrt{(S-n)/(n(S-1))}">&epsilon;<sub>fin</sub> = &sigma;((S &minus; n)/(n(S &minus; 1)))<sup>1/2</sup></span> after <i>n</i> = min(<i>N</i>, <i>S</i>) reads, which is zero from <i>N</i> = <i>S</i>. Smooth pixels have small &sigma; and converge quickly; edges, the photon ring and stars have large &sigma;.</p>
+
+    <h3>4. Amplitude estimation</h3>
+    <p>With <i>n</i> = log<sub>2</sub> <i>S</i> index qubits and one ancilla, the circuit <i>A</i> applies Hadamard gates to the index register and a uniformly controlled rotation <i>R<sub>y</sub></i>(2 arcsin <i>I<sub>j</sub></i><sup>1/2</sup>) to the ancilla, so that</p>
+    <p class="eq" data-tex="A|0\rangle = \sqrt{1-\mu}\,|\psi_0\rangle|0\rangle + \sqrt{\mu}\,|\psi_1\rangle|1\rangle, \qquad \mu = \sin^2\theta"><span><i>A</i>|0&rang; = (1 &minus; &mu;)<sup>1/2</sup> |&psi;<sub>0</sub>&rang;|0&rang; + &mu;<sup>1/2</sup> |&psi;<sub>1</sub>&rang;|1&rang;,&emsp; &mu; = sin&sup2;&theta;</span><span class="eqn">(5)</span></p>
+    <p>The Grover operator <i>Q</i> = <i>A S</i><sub>0</sub> <i>A</i><sup>&dagger;</sup> <i>S</i><sub>&chi;</sub> acts as a rotation by 2&theta; in the plane spanned by |&psi;<sub>0</sub>&rang;|0&rang; and |&psi;<sub>1</sub>&rang;|1&rang;, so after <i>k</i> iterations the ancilla is found in |1&rang; with probability</p>
+    <p class="eq" data-tex="P_k(1) = \sin^2\!\big((2k+1)\theta\big)"><span><i>P<sub>k</sub></i>(1) = sin&sup2;((2<i>k</i>+1)&theta;)</span><span class="eqn">(6)</span></p>
+    <p>Maximum-likelihood amplitude estimation (Suzuki et al. 2020) measures <i>s</i> = 32 shots at each <i>k</i> &isin; {0, 1, 2, 4, ..., 128}, records the hits <i>h<sub>k</sub></i>, and maximizes</p>
+    <p class="eq" data-tex="\log\mathcal{L}(\theta) = \sum_k \big[h_k \log P_k + (s - h_k)\log(1 - P_k)\big]"><span>log &#8466;(&theta;) = &Sigma;<sub><i>k</i></sub> [<i>h<sub>k</sub></i> log <i>P<sub>k</sub></i> + (<i>s</i> &minus; <i>h<sub>k</sub></i>) log(1 &minus; <i>P<sub>k</sub></i>)]</span><span class="eqn">(7)</span></p>
+    <p>Counting each use of <i>A</i> or <i>A</i><sup>&dagger;</sup> as one query, <i>N</i> = <i>s</i> &Sigma;<sub><i>k</i></sub>(2<i>k</i>+1), and the error approaches the Heisenberg scaling</p>
+    <p class="eq" data-tex="\epsilon_{\mathrm{AE}} \propto N^{-1}"><span>&epsilon;<sub>AE</sub> &prop; <i>N</i><sup>&minus;1</sup></span><span class="eqn">(8)</span></p>
+    <p>For this amplitude encoding, ideal shot probabilities depend on &mu;, rather than separately on the ray variance &sigma;&sup2;. The crossover against IID sampling depends on &mu;, &sigma;, the circuit schedule and estimator failures; roughly 10&sup3; is an empirical scale for the selected high-variance pixels, not a universal threshold. A finite table can instead be enumerated exactly.</p>
+
+    <h3>5. Hybrid rule and error maps</h3>
+    <p>The hybrid spends the first 32 queries per pixel on Monte Carlo rays and computes <span class="m" data-tex="\rho = \hat\sigma_{32}^2/\big(\hat\mu_{32}(1-\hat\mu_{32})\big)">&rho; = &sigma;&#770;<sub>32</sub>&sup2;/(&mu;&#770;<sub>32</sub>(1 &minus; &mu;&#770;<sub>32</sub>))</span> from their sample mean <span class="m" data-tex="\hat\mu_{32}">&mu;&#770;<sub>32</sub></span> and sample variance <span class="m" data-tex="\hat\sigma_{32}^2">&sigma;&#770;<sub>32</sub>&sup2;</span>. At budget <i>N</i>, a pixel with &rho; &gt; 300/<i>N</i> spends the remaining <i>N</i> &minus; 32 queries on amplitude estimation: the schedule up to the next <i>k</i>, with as many shots at that <i>k</i> as fit (21 to 31). If the estimate differs from <span class="m" data-tex="\hat\mu_{32}">&mu;&#770;<sub>32</sub></span> by more than four conservative pilot standard errors, <span class="m" data-tex="\sqrt{\max(\hat\mu_{32}(1-\hat\mu_{32}),1/32)/32}">(max(&mu;&#770;<sub>32</sub>(1 &minus; &mu;&#770;<sub>32</sub>), 1/32)/32)<sup>1/2</sup></span>, the pixel keeps its Monte Carlo estimate, a guard against a wrong likelihood mode of Eq. (7). Other pixels continue Monte Carlo and reuse the 32 pilot rays. The threshold 300 is inherited from the first version and was not recalibrated on held-out data. For an interior &mu; and a resolved likelihood mode, the MLAE variance approaches <span class="m" data-tex="\mu(1-\mu)/F">&mu;(1 &minus; &mu;)/<i>F</i></span> with Fisher information <span class="m" data-tex="F = s\sum_k (2k+1)^2"><i>F</i> = <i>s</i> &Sigma;<sub><i>k</i></sub>(2<i>k</i>+1)&sup2;</span>, so for each pixel the advantage map shows the first budget of the schedule at which</p>
+    <p class="eq" data-tex="\sqrt{\mu(1-\mu)/F(N^*)} < \sigma/\sqrt{N^*}"><span>(&mu;(1 &minus; &mu;)/<i>F</i>(<i>N</i>*))<sup>1/2</sup> &lt; &sigma;/(<i>N</i>*)<sup>1/2</sup></span><span class="eqn">(9)</span></p>
+    <p>This asymptotic estimate ignores likelihood failures; on high-variance pixels its median, <i>N</i>* = 2176, agrees with the simulated crossover. The error display shows <span class="m" data-tex="\log_{10}|\hat\mu - \mu|">log<sub>10</sub>|&mu;&#770; &minus; &mu;|</span> per pixel on a fixed scale from 10<sup>&minus;5</sup> to 10<sup>&minus;1</sup>, so passes and methods can be compared directly.</p>
+
+    <h3>6. Limitations</h3>
+    <p>The target is the mean of quantized, tone-mapped grayscale ray values, not a calibrated radiance prediction. Reference chroma is supplied classically to every displayed method. Rays and oracle tables are precomputed; gate synthesis, data loading and ray tracing are excluded from the query count. Full-image passes are computed from the exact noiseless output distribution with three random seeds; Fig. 3 runs the circuits live. The finite table of stored rays is averaged exactly in 1024 classical reads, so these results are not evidence of a practical quantum speedup. The classical baselines are independent and without-replacement sampling; stratified, jittered or adaptive classical sampling, which also improves on <i>N</i><sup>&minus;1/2</sup> at edges, is not compared. No hardware noise is modelled; on current hardware the deepest inspector circuits (816 CX) would retain little signal. The real charge of Sgr A* is negligible (Zajacek et al. 2018), so the charged preset is hypothetical.</p>
+    </div>
+  </section>
+
+  <section class="refs" aria-labelledby="refs">
+    <h2 id="refs" class="theory-title">References</h2>
+    <ol>
+      <li>G. Brassard, P. H&oslash;yer, M. Mosca and A. Tapp, Quantum amplitude amplification and estimation, <i>Contemp. Math.</i> 305, 53 (2002).</li>
+      <li>Event Horizon Telescope Collaboration, First Sagittarius A* Event Horizon Telescope results. I. The shadow of the supermassive black hole in the center of the Milky Way, <i>Astrophys. J. Lett.</i> 930, L12 (2022).</li>
+      <li>E. R. Johnston, Quantum supersampling, <i>ACM SIGGRAPH 2016 Talks</i> (2016).</li>
+      <li>A. Montanaro, Quantum speedup of Monte Carlo methods, <i>Proc. R. Soc. A</i> 471, 20150301 (2015).</li>
+      <li>Y. Suzuki, S. Uno, R. Raymond, T. Tanaka, T. Onodera and N. Yamamoto, Amplitude estimation without phase estimation, <i>Quantum Inf. Process.</i> 19, 75 (2020).</li>
+      <li>M. Zaja&#269;ek, A. Tursunov, A. Eckart and S. Britzen, On the charge of the Galactic centre black hole, <i>Mon. Not. R. Astron. Soc.</i> 480, 4408 (2018).</li>
+    </ol>
+  </section>
+
+  <footer class="foot">This effort is supported by Qollab &amp; IonQ. MIT License.</footer>
+</div>

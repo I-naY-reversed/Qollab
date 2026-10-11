@@ -1,0 +1,58 @@
+{
+ "trials": 1000,
+ "shots": 60000,
+ "pilot": 200,
+ "strategy": "guarded",
+ "seed": 7,
+ "note": "error measured against the circuit energy (sampling error only)",
+ "rows": [
+  {
+   "r": 1.383,
+   "ansatz": "uccsd",
+   "rmse": 0.011597751770690666,
+   "mean_se": 0.011464779641038191,
+   "cover1": 0.672,
+   "cover2": 0.956
+  },
+  {
+   "r": 1.383,
+   "ansatz": "puccd",
+   "rmse": 0.011524894221498064,
+   "mean_se": 0.01103652593920758,
+   "cover1": 0.637,
+   "cover2": 0.953
+  },
+  {
+   "r": 2.183,
+   "ansatz": "uccsd",
+   "rmse": 0.013981484469927466,
+   "mean_se": 0.0140918679665624,
+   "cover1": 0.676,
+   "cover2": 0.96
+  },
+  {
+   "r": 2.183,
+   "ansatz": "puccd",
+   "rmse": 0.013699253132158416,
+   "mean_se": 0.013749040322770177,
+   "cover1": 0.68,
+   "cover2": 0.957
+  },
+  {
+   "r": 3.383,
+   "ansatz": "uccsd",
+   "rmse": 0.014704422682355982,
+   "mean_se": 0.014757426599628616,
+   "cover1": 0.673,
+   "cover2": 0.953
+  },
+  {
+   "r": 3.383,
+   "ansatz": "puccd",
+   "rmse": 0.014336185866949586,
+   "mean_se": 0.014199216866327071,
+   "cover1": 0.673,
+   "cover2": 0.952
+  }
+ ]
+}

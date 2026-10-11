@@ -1,0 +1,16 @@
+{
+ "preset": "sgra",
+ "a": 0.9,
+ "Q": 0.0,
+ "inc": 30.0,
+ "label": "Sgr A* (EHT-motivated)",
+ "r_in": 2.3208934823960408,
+ "size": 256,
+ "sub": 32,
+ "corner_rays": 1050625,
+ "exact_subrays": 2044736,
+ "total_subrays": 67108864,
+ "good_cell_frac": 0.9695,
+ "t_corner": 34.8,
+ "t_total": 184.8
+}

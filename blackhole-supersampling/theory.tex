@@ -1,0 +1,130 @@
+\documentclass[11pt,twocolumn]{article}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{braket}
+\usepackage{stix2}
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+\section*{Introduction}
+Shadows, reflections and gravitational lensing in computer graphics, optics and astronomy are
+commonly computed by ray tracing or path tracing, which assign each pixel the average of many
+light paths and are the standard for physically based images. The mean over a pixel's rays is a
+Monte Carlo integral. If the ray integrand can be evaluated coherently as an oracle, quantum amplitude
+estimation (Brassard et al.\ 2002) estimates it to precision $\epsilon$ with $O(1/\epsilon)$ oracle
+calls, against $O(1/\epsilon^2)$ independent samples (Montanaro 2015); applied to rendering, this is
+quantum supersampling (Johnston 2016). Here the rays are precomputed, so the oracle encodes a finite
+table of 1024 values per pixel, which a classical computer can also average exactly in 1024 reads.
+The comparison with independent (IID) sampling therefore models a continuous integrand, and the
+finite-table baseline is shown beside it. We examine its
+query efficiency and its output on Kerr-Newman black holes with parameters motivated by the
+supermassive black hole Sagittarius~A* (Sgr~A*).
+
+\section*{Theory}
+
+\subsection*{1. Spacetime and rays}
+In Boyer-Lindquist coordinates and geometric units ($G = c = M = 1$), the Kerr-Newman metric
+depends on the spin $a$ and charge $Q$ through
+\begin{equation}
+  \Sigma = r^2 + a^2\cos^2\theta, \qquad \Delta = r^2 - 2r + a^2 + Q^2,
+\end{equation}
+with outer horizon $r_+ = 1 + (1 - a^2 - Q^2)^{1/2}$. Photons are uncharged and therefore follow
+null geodesics ($\mathrm{d}s^2 = 0$) of the metric. The Hamiltonian separates as
+\begin{equation}
+  2\Sigma H = \Delta\, p_r^2 + p_\theta^2 + \left(\frac{L}{\sin\theta} - a\sin\theta\right)^{2}
+  - \frac{(r^2 + a^2 - aL)^2}{\Delta} = 0,
+\end{equation}
+with energy $E = 1$, axial angular momentum $L$ and the Carter constant conserved. Rays are
+integrated backwards with fourth-order Runge-Kutta in Mino time $\tau$, defined by
+$\mathrm{d}\lambda = \Sigma\,\mathrm{d}\tau$ with $\lambda$ the affine parameter, from a
+zero-angular-momentum observer at $r = 40$ until they cross the horizon, escape to $r = 1000$ (star
+field), or cross the disk plane. The traced shadow boundary agrees with the analytic photon-orbit
+boundary to $7\times10^{-4}\,M$; the Carter constant drifts by less than $4\times10^{-7}$.
+
+\subsection*{2. Disk emission}
+We assume a geometrically thin, optically thin accretion disk between the innermost stable circular
+orbit and $r = 10$. Gas follows prograde circular orbits with angular velocity
+\begin{equation}
+  \Omega = \frac{\sqrt{r - Q^2}}{r^2 + a\sqrt{r - Q^2}}.
+\end{equation}
+A photon of angular momentum $L$ emitted there is shifted in frequency by
+$g = 1/\bigl(u^t(1 - \Omega L)\bigr)$. With $x = r_{\mathrm{ISCO}}/r$, the emitted flux follows the
+thin-disk profile $F \propto x^3(1 - x^{1/2})$ and the temperature $T \propto F^{1/4}$; the observed
+brightness is $g^4 F$ and the colour is the blackbody colour of $gT$. The temperature scale, lane
+texture, filmic tone map and bloom filter are artistic and identical for every image shown.
+
+\subsection*{3. Pixel integral and Monte Carlo}
+A pixel's luminance is the mean of its $S = 1024$ ray values $I_j \in [0, 1]$,
+$\mu = S^{-1}\sum_j I_j$. Averaging $N$ rays drawn at random gives an unbiased estimate $\hat\mu$
+with root-mean-square error
+\begin{equation}
+  \epsilon_{\mathrm{MC}} = \sigma N^{-1/2},
+\end{equation}
+where $\sigma^2$ is the variance of the $I_j$. Smooth pixels have small $\sigma$ and converge
+quickly; edges, the photon ring and stars have large $\sigma$.
+
+\subsection*{4. Amplitude estimation}
+With $n = \log_2 S$ index qubits and one ancilla, the circuit $A$ applies Hadamard gates to the
+index register and a uniformly controlled rotation $R_y\bigl(2\arcsin I_j^{1/2}\bigr)$ to the
+ancilla, so that
+\begin{equation}
+  A\ket{0} = \sqrt{1-\mu}\,\ket{\psi_0}\ket{0} + \sqrt{\mu}\,\ket{\psi_1}\ket{1},
+  \qquad \mu = \sin^2\theta.
+\end{equation}
+The Grover operator $Q = A S_0 A^\dagger S_\chi$ acts as a rotation by $2\theta$ in the plane
+spanned by $\ket{\psi_0}\ket{0}$ and $\ket{\psi_1}\ket{1}$, so after $k$ iterations the ancilla is
+found in $\ket{1}$ with probability
+\begin{equation}
+  P_k(1) = \sin^2\!\bigl((2k+1)\theta\bigr).
+\end{equation}
+Maximum-likelihood amplitude estimation (Suzuki et al.\ 2020) measures $s = 32$ shots at each
+$k \in \{0, 1, 2, 4, \dots, 128\}$, records the hits $h_k$, and maximizes
+\begin{equation}
+  \log\mathcal{L}(\theta) = \sum_k \bigl[h_k \log P_k + (s - h_k)\log(1 - P_k)\bigr].
+\end{equation}
+Counting each use of $A$ or $A^\dagger$ as one query, $N = s\sum_k (2k+1)$, and the error
+approaches the Heisenberg scaling
+\begin{equation}
+  \epsilon_{\mathrm{AE}} \propto N^{-1},
+\end{equation}
+For this amplitude encoding, ideal shot probabilities depend on $\mu$, rather than separately
+on the ray variance $\sigma^2$. The crossover against IID sampling depends on $\mu$, $\sigma$,
+the schedule and estimator failures; $10^3$ is an empirical scale for selected pixels,
+not a universal threshold. A finite table can instead be enumerated exactly.
+
+\subsection*{5. Hybrid rule and error maps}
+The hybrid spends the first 32 queries per pixel on Monte Carlo rays and computes
+$\rho = \hat\sigma_{32}^2/\bigl(\hat\mu_{32}(1 - \hat\mu_{32})\bigr)$ from their sample mean
+$\hat\mu_{32}$ and sample variance $\hat\sigma_{32}^2$. At budget $N$, a pixel with
+$\rho > 300/N$ spends the remaining $N - 32$ queries on amplitude estimation: the schedule up to the
+next $k$, with as many shots at that $k$ as fit (21 to 31). The pixel keeps its Monte Carlo estimate
+if the result differs from $\hat\mu_{32}$ by more than four conservative pilot standard errors,
+$\sqrt{\max(\hat\mu_{32}(1-\hat\mu_{32}), 1/32)/32}$. Other pixels continue Monte Carlo and reuse the 32 pilot rays. The advantage map marks the
+first budget $N^*$ at which $\sqrt{\mu(1-\mu)/F(N^*)} < \sigma/\sqrt{N^*}$, with Fisher information
+$F = s\sum_k (2k+1)^2$. The threshold 300 is inherited from the first version and was not
+recalibrated on held-out data. The error display shows
+$\log_{10}\lvert\hat\mu - \mu\rvert$ per pixel on a fixed scale from $10^{-5}$ to $10^{-1}$, so
+passes and methods can be compared directly.
+
+\subsection*{6. Limitations}
+The target is the mean of quantized, tone-mapped grayscale ray values, not a calibrated radiance
+prediction. Reference chroma is supplied classically to every displayed method. Rays and oracle
+tables are precomputed; gate synthesis, data loading and ray tracing are excluded from the query
+count. Full-image passes are computed from the exact noiseless output distribution with three random
+seeds; Fig.~3 runs the circuits live. The finite table of stored rays is averaged exactly in 1024
+classical reads, so these results are not evidence of a practical quantum speedup. The disk shading
+is referred to an observer at infinity while the camera is at finite radius (factor 1.026 in $g$ for
+the Sgr~A* camera at $L = 0$). The real charge of Sgr~A* is negligible (Zaja\v{c}ek et al.\ 2018),
+so the charged preset is hypothetical.
+
+\section*{References}
+\begin{enumerate}\small
+\item G. Brassard, P. H\o yer, M. Mosca and A. Tapp, Quantum amplitude amplification and estimation, \emph{Contemp.\ Math.} 305, 53 (2002).
+\item Event Horizon Telescope Collaboration, First Sagittarius A* Event Horizon Telescope results. I., \emph{Astrophys.\ J.\ Lett.} 930, L12 (2022).
+\item E. R. Johnston, Quantum supersampling, \emph{ACM SIGGRAPH 2016 Talks} (2016).
+\item A. Montanaro, Quantum speedup of Monte Carlo methods, \emph{Proc.\ R. Soc.\ A} 471, 20150301 (2015).
+\item Y. Suzuki et al., Amplitude estimation without phase estimation, \emph{Quantum Inf.\ Process.} 19, 75 (2020).
+\item M. Zaja\v{c}ek, A. Tursunov, A. Eckart and S. Britzen, On the charge of the Galactic centre black hole, \emph{MNRAS} 480, 4408 (2018).
+\end{enumerate}
+
+\end{document}

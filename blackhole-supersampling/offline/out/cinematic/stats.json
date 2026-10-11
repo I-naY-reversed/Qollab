@@ -1,0 +1,16 @@
+{
+ "preset": "cinematic",
+ "a": 0.9,
+ "Q": 0.3,
+ "inc": 80.0,
+ "label": "Cinematic",
+ "r_in": 1.9803903889686283,
+ "size": 256,
+ "sub": 32,
+ "corner_rays": 1050625,
+ "exact_subrays": 2048000,
+ "total_subrays": 67108864,
+ "good_cell_frac": 0.9695,
+ "t_corner": 33.3,
+ "t_total": 188.9
+}

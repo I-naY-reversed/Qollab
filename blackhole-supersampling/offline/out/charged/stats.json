@@ -1,0 +1,16 @@
+{
+ "preset": "charged",
+ "a": 0.6,
+ "Q": 0.7,
+ "inc": 45.0,
+ "label": "Charged what-if",
+ "r_in": 2.551950970442631,
+ "size": 256,
+ "sub": 32,
+ "corner_rays": 1050625,
+ "exact_subrays": 1974272,
+ "total_subrays": 67108864,
+ "good_cell_frac": 0.9706,
+ "t_corner": 32.4,
+ "t_total": 181.7
+}

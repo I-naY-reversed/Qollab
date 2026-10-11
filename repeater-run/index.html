@@ -1,0 +1,158 @@
+<div id="app">
+  <div class="banner" id="banner" role="img" aria-label="Illustration: a night map of the 540 km fibre route from Toronto to Montreal, with repeater stations spaced along the line."></div>
+  <header class="head">
+    <div class="intro">
+      <h1>Repeater Run</h1>
+      <p class="byline">B. Kaganovitch and Y. Ivanov, University of Toronto. Qollab x IonQ Hackathon, October 2026.</p>
+      <p class="lede">A quantum network runs on entangled pairs shared between distant nodes, used for teleportation, distributed computation and key distribution. Fibre loss grows exponentially with distance and a quantum state cannot be amplified, so a quantum repeater builds long-distance entanglement from short segments. <b>Entanglement swapping</b>, a Bell measurement at an intermediate node, joins two pairs into one pair spanning both segments and compounds their noise. <b>Entanglement purification</b> consumes two identically prepared pairs and can keep one with higher fidelity when their input fidelity exceeds 0.5. On this page you build a repeater chain over the 540 km route from Toronto to Montreal, and it is scored by the fidelity and rate of the delivered pairs. Each operation also runs as an 8-qubit circuit on the selected backend.</p>
+    </div>
+    <aside class="howto" aria-label="Usage">
+      <h2>Usage</h2>
+      <ol>
+        <li>Select the number of segments and the fidelity <i>F</i><sub>0</sub> of an elementary pair.</li>
+        <li><b>Swap</b> at a node joins the two adjacent links (Eq. 2). <b>Purify</b> consumes a second copy of a link (Eq. 3). Distilling entanglement from identical Werner inputs requires fidelity above 0.5; below that, undo and purify earlier.</li>
+        <li>Once one link spans the route, the result row gives its fidelity, pair rate and secret key rate; <b>Measure QBER</b> samples its error rate on the backend.</li>
+      </ol>
+      <p class="keys"><span><kbd>1</kbd>-<kbd>4</kbd> segments</span><span><kbd>F</kbd> <i>F</i><sub>0</sub></span><span><kbd>M</kbd> measured mode</span><span><kbd>P</kbd> pause animations</span><span><kbd>U</kbd> undo</span><span><kbd>R</kbd> reset</span><span><kbd>K</kbd> measure QBER</span></p>
+    </aside>
+  </header>
+
+  <section class="console" aria-label="Route setup">
+    <div class="presets" role="group" aria-label="Number of segments">
+      <button class="preset" data-n="1" aria-pressed="false">1 segment</button>
+      <button class="preset" data-n="2" aria-pressed="false">2</button>
+      <button class="preset" data-n="4" aria-pressed="true">4</button>
+      <button class="preset" data-n="8" aria-pressed="false">8</button>
+    </div>
+    <div class="presets" role="group" aria-label="Fidelity of an elementary pair">
+      <button class="f0" data-f0="0.9" aria-pressed="false"><i>F</i><sub>0</sub> = 0.90</button>
+      <button class="f0" data-f0="0.95" aria-pressed="true"><i>F</i><sub>0</sub> = 0.95</button>
+      <button class="f0" data-f0="0.99" aria-pressed="false"><i>F</i><sub>0</sub> = 0.99</button>
+    </div>
+    <p class="params" aria-label="Link physics">
+      <span><i>L</i> = <b id="pKm">135 km</b></span>
+      <span><abbr title="Heralding probability of one attempt over one segment, Eq. (1)">&eta;</abbr> = <b id="pEta">-</b></span>
+      <span>&tau; = <b id="pT">-</b></span>
+    </p>
+    <label class="switch"><input id="useMeasured" type="checkbox"><span>measured mode: links take <i>F</i> from the circuit</span></label>
+    <label class="switch"><input id="still" type="checkbox"><span>pause animations</span></label>
+    <p class="status" id="status" role="status" aria-live="polite">Loading Qiskit and the link model...</p>
+  </section>
+
+  <figure class="fig fig1">
+    <div class="figtitle-row">
+      <h2 class="figtitle">Route</h2>
+      <div class="actions">
+        <button id="undo" disabled>Undo</button>
+        <button id="reset" disabled>Reset</button>
+        <button id="key" class="primary" disabled>Measure QBER</button>
+      </div>
+    </div>
+    <div class="route" id="route" aria-label="Links along the route"></div>
+    <div class="km" id="kmTicks" aria-hidden="true"></div>
+    <figcaption><b>Fig. 1.</b> Links between nodes. Each holds a <abbr title="Werner state: the Bell state with probability F, the other three Bell states with (1 - F)/3 each">Werner</abbr> pair of fidelity <i>F</i>; <i>M</i> is the expected number of elementary pairs per delivered pair on its busiest segment. The value under each Swap is the fidelity of the joined link. Bars: <i>F</i> from 0.5 to 1; tick: <i>F</i> = 0.835 (QBER = 11%). Moving photons show pairs being generated on each link; their speed follows the time per pair on a log scale.</figcaption>
+  </figure>
+
+  <section class="score" aria-label="End-to-end result">
+    <div class="tile">
+      <p class="tlabel">End-to-end fidelity <i>F</i></p>
+      <p class="tval" id="sF">-</p>
+      <div id="qberBar"></div>
+    </div>
+    <div class="tile">
+      <p class="tlabel">Pair rate 1/<i>T</i> (Eq. 6)</p>
+      <p class="tval" id="sPair">-</p>
+      <p class="tnote" id="sPairs">-</p>
+    </div>
+    <div class="tile">
+      <p class="tlabel">Secret key rate <i>R</i> = <i>r</i>/<i>T</i></p>
+      <p class="tval" id="sRate">-</p>
+      <p class="tnote" id="sRatePar">best known: -</p>
+    </div>
+    <div class="emblem" id="emblem" aria-hidden="true"></div>
+    <p class="verdict" id="sKey" aria-live="polite"></p>
+  </section>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Key rate and segment count</h2></div>
+      <div id="rateplot"></div>
+      <figcaption><b>Fig. 2.</b> Best known <i>R</i> against segment count for each <i>F</i><sub>0</sub> (search over nested swap and purify orders); selected <i>F</i><sub>0</sub> in blue. <i>R</i> combines fidelity and pair rate in one number. Dashed: <abbr title="Pirandola-Laurenza-Ottaviani-Banchi bound: the highest rate of any scheme without repeaters over a lossy channel, Eq. (7)">PLOB</abbr> bound at a 1 GHz source. Gold: current route. Each point uses the best purification found. Without purification, swapping alone at <i>F</i><sub>0</sub> = 0.95 fails at 4 segments (QBER 12.1%) and 8 segments (QBER 21%): more segments are faster but noisier.</figcaption>
+    </figure>
+    <figure class="fig" id="logCard">
+      <div class="figtitle-row"><h2 class="figtitle">Circuit results</h2></div>
+      <div class="tablewrap" id="log"><p class="note">No operations yet.</p></div>
+      <figcaption><b>Fig. 3.</b> Each operation executed on the selected backend (8 qubits, <span id="shots">2000</span> shots) from pairs at the input fidelities. Bars: measured <i>F</i> with binomial 1-sigma interval; tick: Eq. (2) or (3).</figcaption>
+    </figure>
+  </div>
+
+  <figure class="fig">
+    <div class="figtitle-row"><h2 class="figtitle">Last circuit</h2></div>
+    <div class="circwrap"><pre id="circuit" aria-label="Text drawing of the last circuit">No circuit yet.</pre></div>
+    <p class="circ" id="circNote"></p>
+    <figcaption><b>Fig. 4.</b> q0-q3: the two pairs; q4-q7: ancillas that apply the Pauli mixture of a Werner state (Theory 5). Readout CX, H maps &Phi;<sup>+</sup> to 00.</figcaption>
+  </figure>
+
+  <section class="theory" aria-labelledby="intro">
+    <div class="theory-cols">
+    <h2 id="intro" class="theory-title">Introduction</h2>
+    <p>Teleportation, distributed quantum computation and entanglement-based key distribution (Bennett, Brassard and Mermin 1992) all consume entangled pairs shared between distant nodes. In fibre, the transmittance falls exponentially with distance and the no-cloning theorem (Wootters and Zurek 1982) forbids amplification, so the rate of any direct scheme decays with the transmittance (Pirandola et al. 2017). The quantum repeater (Briegel et al. 1998) avoids this limit: entanglement is generated over short segments, extended by swapping (&#379;ukowski et al. 1993) and restored by purification (Bennett et al. 1996), at a cost polynomial in distance. A repeater design fixes the number of segments and the order of swaps and purifications, trading pair rate against fidelity, both paid for in elementary pairs.</p>
+
+    <h2 class="theory-title">Theory</h2>
+    <h3>1. Loss and heralding</h3>
+    <p>Fibre attenuates 0.2 dB/km at 1550 nm; over the 540 km route one photon in 6 x 10<sup>10</sup> arrives. A segment of length <i>L</i> delivers a heralded elementary pair per attempt with probability</p>
+    <p class="eq" data-tex="\eta = 10^{-0.02\,L/\mathrm{km}}, \qquad \tau = \frac{L}{c_f\,\eta}"><span>&eta; = 10<sup>&minus;0.02 <i>L</i>/km</sup>,&emsp; &tau; = <i>L</i>/(<i>c<sub>f</sub></i> &eta;)</span><span class="eqn">(1)</span></p>
+    <p>where &tau; is the mean time per pair when each attempt awaits confirmation, with <span class="m" data-tex="c_f = 2\times10^5">c<sub>f</sub> = 2 x 10<sup>5</sup></span> km/s. For one segment spanning the route, &tau; = 5.4 years; for four segments of 135 km, 338 ms.</p>
+
+    <h3>2. Werner pairs and swapping</h3>
+    <p>Each link is a Werner state (Werner 1989), <span class="m" data-tex="\rho = F\,|\Phi^+\rangle\langle\Phi^+| + \tfrac{1-F}{3}\,(\mathbb{1} - |\Phi^+\rangle\langle\Phi^+|)">&rho; = F|&Phi;<sup>+</sup>&rang;&lang;&Phi;<sup>+</sup>| + (1 &minus; F)/3 (1 &minus; |&Phi;<sup>+</sup>&rang;&lang;&Phi;<sup>+</sup>|)</span>, with Werner parameter <span class="m" data-tex="w = (4F-1)/3">w = (4F &minus; 1)/3</span>. A Bell measurement at the shared node and a Pauli correction at the far end join two links; the Werner parameters multiply,</p>
+    <p class="eq" data-tex="w' = w_1 w_2"><span><i>w</i>&prime; = <i>w</i><sub>1</sub><i>w</i><sub>2</sub></span><span class="eqn">(2)</span></p>
+    <p>For <i>n</i> identical elementary segments, <i>w</i> = <i>w</i><sub>0</sub><sup>n</sup> and <i>F</i> = (1 + 3<i>w</i>)/4: it is <i>F</i> &minus; 1/4 that decays geometrically.</p>
+
+    <h3>3. Purification</h3>
+    <p>In the recurrence protocol of Bennett et al. (1996), both nodes apply a CNOT from the kept pair to the sacrificial pair and measure the latter in Z. The kept pair is retained if the outcomes agree. With <span class="m" data-tex="a_i = (1-F_i)/3">a<sub>i</sub> = (1 &minus; F<sub>i</sub>)/3</span>,</p>
+    <p class="eq" data-tex="F' = \frac{F_1F_2 + a_1a_2}{p}, \qquad p = (F_1+a_1)(F_2+a_2) + 4a_1a_2"><span><i>F</i>&prime; = (<i>F</i><sub>1</sub><i>F</i><sub>2</sub> + <i>a</i><sub>1</sub><i>a</i><sub>2</sub>)/<i>p</i>,&emsp; <i>p</i> = (<i>F</i><sub>1</sub>+<i>a</i><sub>1</sub>)(<i>F</i><sub>2</sub>+<i>a</i><sub>2</sub>) + 4<i>a</i><sub>1</sub><i>a</i><sub>2</sub></span><span class="eqn">(3)</span></p>
+    <p>A failed check discards both pairs, so the cost of the kept link is 2/<i>p</i> times that of its inputs. The output is twirled back to Werner form. Without the twirl, residual errors accumulate in &Phi;<sup>&minus;</sup>, to which the Z-parity check is blind: a second round from <i>F</i> = 0.95 then lowers <i>F</i> from 0.965 to 0.934, whereas with the twirl it rises to 0.976. The protocol of Deutsch et al. (1996) reaches 0.998.</p>
+
+    <h3>4. Rates</h3>
+    <p>Segments operate in parallel; swapping leaves each segment's demand unchanged and purification multiplies it by 2/<i>p</i>. With <i>M</i> the largest expected demand over the segments, we use <i>T</i> = <i>M</i>&tau; as an optimistic resource-time estimate. It omits synchronization between probabilistic links and assumes ideal buffering; 1/<i>T</i> is an idealized throughput estimate, not the expected first-pair arrival rate. Fidelity and rate are combined by the secret key rate of entanglement-based BB84. Measuring a Werner pair in Z or X gives</p>
+    <p class="eq" data-tex="\mathrm{QBER} = \tfrac{2}{3}(1 - F)"><span>QBER = 2(1 &minus; <i>F</i>)/3</span><span class="eqn">(4)</span></p>
+    <p>and the asymptotic secret fraction (Shor and Preskill 2000), with <i>h</i> the binary entropy,</p>
+    <p class="eq" data-tex="r = \max\{0, 1 - 2h(\mathrm{QBER})\}"><span><i>r</i> = max{0, 1 &minus; 2<i>h</i>(QBER)}</span><span class="eqn">(5)</span></p>
+    <p>whose positive branch vanishes at approximately QBER = 11%, i.e. <i>F</i> = 0.835. The game uses a conservative 11% threshold and assumes asymptotically efficient basis sifting. The secret key rate is</p>
+    <p class="eq" data-tex="R = \frac{r}{T}, \qquad T = M\tau"><span><i>R</i> = <i>r</i>/<i>T</i>,&emsp; <i>T</i> = <i>M</i>&tau;</span><span class="eqn">(6)</span></p>
+    <p>No scheme without repeaters exceeds the Pirandola-Laurenza-Ottaviani-Banchi (PLOB) bound per channel use (Pirandola et al. 2017),</p>
+    <p class="eq" data-tex="R_{\mathrm{PLOB}} = -\log_2(1 - \eta_{\mathrm{tot}}) \approx 1.44\,\eta_{\mathrm{tot}}"><span><i>R</i><sub>PLOB</sub> = &minus;log<sub>2</sub>(1 &minus; &eta;<sub>tot</sub>) &asymp; 1.44 &eta;<sub>tot</sub></span><span class="eqn">(7)</span></p>
+    <p>which is 0.023 bits/s for 540 km at 10<sup>9</sup> channel uses per second.</p>
+
+    <h3>5. Circuits</h3>
+    <p>Each operation runs on 8 qubits: two Bell pairs and two ancillas per pair. The ancillas, prepared by RY rotations, control X and Z on one qubit of the pair, which after tracing out leaves exactly the Werner state. The Bell measurement of a swap is deferred, with the corrections as controlled gates, since the built-in simulator does not support classically conditioned gates and IonQ backends do not support mid-circuit measurement. The QBER circuit measures one copy in Z and one in X. The protocol consists of Clifford operations on Pauli noise and is classically simulable; the circuits verify Eqs. (2)-(4) and claim no speedup.</p>
+
+    <h3>6. Worked example</h3>
+    <p>Four segments, <i>F</i><sub>0</sub> = 0.95, so <i>w</i><sub>0</sub> = 0.933 and &tau; = 338 ms.</p>
+    <p><i>Swaps only.</i> Three swaps give <span class="m" data-tex="w = w_0^4 = 0.759">w = w<sub>0</sub><sup>4</sup> = 0.759</span>, <i>F</i> = 0.819 and QBER = 12.1%: <i>r</i> = 0. A pair arrives every 338 ms but carries no secret key.</p>
+    <p><i>Purify, then swap.</i> One purification per segment gives <i>F</i> = 0.965 with <i>p</i> = 0.936, so <i>M</i> = 2/<i>p</i> = 2.14. Swapping gives <span class="m" data-tex="w = 0.953^4 = 0.826">w = 0.953<sup>4</sup> = 0.826</span>, <i>F</i> = 0.869, QBER = 8.7% and <i>r</i> = 0.147. With <i>T</i> = 2.14 x 338 ms = 0.72 s, <i>R</i> = 0.20 bits/s, 8.9 times the illustrative pure-loss repeaterless bound at one billion channel uses per second, for 8.55 elementary pairs per delivered pair. <i>R</i> comes from the idealized resource model and is not a measured communication rate.</p>
+    <p><i>Two segments.</i> Without purification <i>F</i> = 0.903, but &tau; = 5.7 min, so <i>R</i> = 9 x 10<sup>&minus;4</sup> bits/s, below the PLOB bound.</p>
+
+    <h3>7. Limitations</h3>
+    <p>Elementary pairs start at <i>F</i><sub>0</sub>, standing in for source and memory imperfection. Memories and local operations are ideal, classical communication is instantaneous and nodes are equally spaced. The rate model also omits stochastic synchronization and assumes sufficient buffering. The PLOB line refers to a single pure-loss channel at the stated channel-use rate. Each circuit checks one operation from pairs at the current fidelities. Rates are asymptotic; finite-key rates are lower. The search for best known strategies allows up to six purification rounds per nesting level.</p>
+    </div>
+  </section>
+
+  <section class="refs" aria-labelledby="refs">
+    <h2 id="refs" class="theory-title">References</h2>
+    <ol>
+      <li>C. H. Bennett, G. Brassard and N. D. Mermin, Quantum cryptography without Bell's theorem, <i>Phys. Rev. Lett.</i> 68, 557 (1992).</li>
+      <li>C. H. Bennett, G. Brassard, S. Popescu, B. Schumacher, J. A. Smolin and W. K. Wootters, Purification of noisy entanglement and faithful teleportation via noisy channels, <i>Phys. Rev. Lett.</i> 76, 722 (1996).</li>
+      <li>H.-J. Briegel, W. D&uuml;r, J. I. Cirac and P. Zoller, Quantum repeaters: the role of imperfect local operations in quantum communication, <i>Phys. Rev. Lett.</i> 81, 5932 (1998).</li>
+      <li>D. Deutsch, A. Ekert, R. Jozsa, C. Macchiavello, S. Popescu and A. Sanpera, Quantum privacy amplification and the security of quantum cryptography over noisy channels, <i>Phys. Rev. Lett.</i> 77, 2818 (1996).</li>
+      <li>S. Pirandola, R. Laurenza, C. Ottaviani and L. Banchi, Fundamental limits of repeaterless quantum communications, <i>Nat. Commun.</i> 8, 15043 (2017).</li>
+      <li>P. W. Shor and J. Preskill, Simple proof of security of the BB84 quantum key distribution protocol, <i>Phys. Rev. Lett.</i> 85, 441 (2000).</li>
+      <li>R. F. Werner, Quantum states with Einstein-Podolsky-Rosen correlations admitting a hidden-variable model, <i>Phys. Rev. A</i> 40, 4277 (1989).</li>
+      <li>W. K. Wootters and W. H. Zurek, A single quantum cannot be cloned, <i>Nature</i> 299, 802 (1982).</li>
+      <li>M. &#379;ukowski, A. Zeilinger, M. A. Horne and A. K. Ekert, "Event-ready-detectors" Bell experiment via entanglement swapping, <i>Phys. Rev. Lett.</i> 71, 4287 (1993).</li>
+    </ol>
+  </section>
+
+  <footer class="foot">This effort is supported by Qollab &amp; IonQ. MIT License.</footer>
+</div>

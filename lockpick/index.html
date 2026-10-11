@@ -1,0 +1,140 @@
+<div id="app">
+  <header class="head">
+    <div class="intro">
+      <h1>Lockpick</h1>
+      <p class="byline">B. Kaganovitch and Y. Ivanov, University of Toronto. Qollab x IonQ Hackathon, October 2026.</p>
+      <p class="lede">No measurement distinguishes two non-orthogonal states with certainty. The lowest attainable error probability is the Helstrom bound; the Ivanovic-Dieks-Peres measurement instead never errs but sometimes returns no answer. The same limit bounds what an eavesdropper learns from a single intercepted state in two-state key distribution. Here a lock holds a qubit in one of two known states. The reader chooses the measurement; each choice runs as a circuit on the selected backend and is compared with both limits.</p>
+    </div>
+    <aside class="howto" aria-label="Usage">
+      <h2>Usage</h2>
+      <ol>
+        <li>Select the overlap <i>s</i> of the two lock states and the a priori probability <i>p</i> of &psi;<sub>+</sub>.</li>
+        <li>Set the measurement axis &beta; by dragging in Fig. 1 or with the slider; Fig. 2 shows the predicted probability of a correct result (Eq. 2).</li>
+        <li><b>Measure</b> runs the circuit for both lock states. <b>Unambiguous</b> switches to unambiguous discrimination (Eq. 4).</li>
+      </ol>
+      <p class="keys"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> &beta; (Shift: 10 deg)</span><span><kbd>Enter</kbd> measure</span><span><kbd>1</kbd>-<kbd>3</kbd> overlap</span><span><kbd>P</kbd> a priori <i>p</i></span><span><kbd>U</kbd> measurement</span><span><kbd>O</kbd> Helstrom axis</span></p>
+    </aside>
+  </header>
+
+  <section class="console" aria-label="Lock setup">
+    <div class="group"><span class="seg-name">Overlap</span>
+      <div class="seg" role="radiogroup" aria-label="Overlap s">
+        <label><input type="radio" name="s" value="0.25">s = 0.25</label>
+        <label><input type="radio" name="s" value="0.5" checked>0.50</label>
+        <label><input type="radio" name="s" value="0.75">0.75</label>
+      </div>
+    </div>
+    <div class="group"><span class="seg-name">A priori</span>
+      <div class="seg" role="radiogroup" aria-label="A priori probability p of psi+">
+        <label><input type="radio" name="p" value="0.5" checked>p = 0.50</label>
+        <label><input type="radio" name="p" value="0.75">0.75</label>
+        <label><input type="radio" name="p" value="0.9">0.90</label>
+      </div>
+    </div>
+    <div class="group"><span class="seg-name">Measurement</span>
+      <div class="seg" role="radiogroup" aria-label="Measurement">
+        <label><input type="radio" name="mode" value="min" checked>Minimum-error</label>
+        <label><input type="radio" name="mode" value="usd">Unambiguous</label>
+      </div>
+    </div>
+    <label class="beta">&beta;<input id="beta" type="range" min="0" max="180" step="1" value="0" aria-label="Measurement axis beta in degrees"><output id="betaOut">0 deg</output></label>
+    <label class="switch"><input id="showOpt" type="checkbox"><span>show Helstrom axis</span></label>
+    <button id="measure" class="primary" disabled>Measure</button>
+    <p class="status" id="status" role="status" aria-live="polite">Loading Qiskit...</p>
+  </section>
+
+  <section class="score" aria-label="Result">
+    <div class="tile"><p class="tlabel"><i>P</i><sub>corr</sub>, measured</p><p class="tval" id="sP">-</p><p class="tnote" id="sPn">-</p></div>
+    <div class="tile"><p class="tlabel"><i>P</i><sub>corr</sub>, Eq. (2) or (4)</p><p class="tval" id="sE">-</p><p class="tnote" id="sEn">-</p></div>
+    <div class="tile"><p class="tlabel">Helstrom bound <i>P</i><sub>H</sub>, Eq. (3)</p><p class="tval" id="sH">-</p><p class="tnote" id="sHn">-</p></div>
+    <div class="tile"><p class="tlabel">Guessing, max(<i>p</i>, 1 &minus; <i>p</i>)</p><p class="tval" id="sG">-</p><p class="tnote">no measurement</p></div>
+    <p class="verdict" id="verdict" aria-live="polite"></p>
+  </section>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Lock states and measurement axis</h2></div>
+      <svg id="bloch" class="bloch" viewBox="-160 -160 320 320" role="img" aria-label="Great circle of the Bloch sphere through the two lock states and the measurement axis"></svg>
+      <figcaption><b>Fig. 1.</b> The x-z great circle of the Bloch sphere. White: lock states &psi;<sub>+</sub> and &psi;<sub>&minus;</sub> at polar angles &plusmn;&theta;, with <i>s</i> = cos &theta;. Blue: measurement axis at angle &beta;; the + outcome is read as &psi;<sub>+</sub>. Plum, dashed: the Helstrom axis.</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Success probability against &beta;</h2></div>
+      <svg id="pplot" class="pplot" viewBox="0 0 440 280" role="img" aria-label="Success probability against measurement angle"></svg>
+      <div class="legend" aria-hidden="true">
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#7aa2f7" stroke-width="2"/></svg>Eq. (2)</span>
+        <span><svg viewBox="0 0 26 10"><circle cx="13" cy="5" r="3.5" fill="#7aa2f7"/></svg>measured, 1 sigma</span>
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#c77dba" stroke-width="2" stroke-dasharray="5 3"/></svg>Helstrom bound</span>
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#e0b24a" stroke-width="2" stroke-dasharray="1.5 3"/></svg>guessing</span>
+      </div>
+      <figcaption><b>Fig. 2.</b> Probability of a correct identification against &beta; for the selected <i>s</i> and <i>p</i>. Points: measured <i>P</i><sub>corr</sub> at <span id="shots">4000</span> shots per state, weighted by the a priori probabilities (Eq. 5).</figcaption>
+    </figure>
+  </div>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Outcomes</h2></div>
+      <div class="bars" id="bars"><p class="note">No measurement yet.</p></div>
+      <figcaption><b>Fig. 3.</b> <i>P</i><sub>corr</sub>, <i>P</i><sub>err</sub> and <i>P</i><sub>?</sub> in the last run of each measurement, weighted by the a priori probabilities. Blue: correct; red: error; grey: inconclusive. Ticks: Eqs. (2)-(4).</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Last circuit</h2></div>
+      <div class="circwrap"><pre id="circuit" aria-label="Text drawing of the last circuit">No circuit yet.</pre></div>
+      <p class="circ" id="circNote"></p>
+      <figcaption><b>Fig. 4.</b> q0 is prepared in &psi;<sub>+</sub> and q1 in &psi;<sub>&minus;</sub>, so one job measures both. Minimum-error: RY(&minus;&beta;), then measurement in the computational basis. Unambiguous: ancillas q2 and q3 implement Eq. (4).</figcaption>
+    </figure>
+  </div>
+
+  <section class="theory" aria-labelledby="intro">
+    <div class="theory-cols">
+    <h2 id="intro" class="theory-title">Introduction</h2>
+    <p>Distinguishing two known quantum states is the elementary problem of quantum detection theory (Helstrom 1976). It sets the information available to an eavesdropper on two-state key distribution (Bennett 1992) and the error rate of receivers for weak coherent light. The two standard strategies (Barnett and Croke 2009) minimise the error probability, or exclude errors and accept inconclusive results (Ivanovic 1987; Dieks 1988; Peres 1988). Both are realised here as circuits on one qubit per lock state, with one ancilla per state for the unambiguous measurement.</p>
+
+    <h2 class="theory-title">Theory</h2>
+    <h3>1. Lock states</h3>
+    <p>The lock holds, with a priori probabilities <i>p</i> and 1 &minus; <i>p</i>,</p>
+    <p class="eq" data-tex="|\psi_\pm\rangle = \cos\tfrac{\theta}{2}\,|0\rangle \pm \sin\tfrac{\theta}{2}\,|1\rangle, \qquad s = \langle\psi_+|\psi_-\rangle = \cos\theta"><span>|&psi;<sub>&plusmn;</sub>&rang; = cos(&theta;/2)|0&rang; &plusmn; sin(&theta;/2)|1&rang;,&emsp; <i>s</i> = cos &theta;</span><span class="eqn">(1)</span></p>
+    <p>They lie at polar angles &plusmn;&theta; in the x-z plane of the Bloch sphere and are prepared by RY(&plusmn;&theta;) on |0&rang;.</p>
+
+    <h3>2. Projective measurement</h3>
+    <p>A projective measurement along the Bloch axis at angle &beta; (RY(&minus;&beta;), then Z) with outcome + read as &psi;<sub>+</sub> gives a correct result with probability</p>
+    <p class="eq" data-tex="P(\beta) = p\,\frac{1+\cos(\beta-\theta)}{2} + (1-p)\,\frac{1-\cos(\beta+\theta)}{2}"><span><i>P</i>(&beta;) = <i>p</i>[1 + cos(&beta; &minus; &theta;)]/2 + (1 &minus; <i>p</i>)[1 &minus; cos(&beta; + &theta;)]/2</span><span class="eqn">(2)</span></p>
+    <p>&beta; = 0 is a measurement in the computational basis. Guessing without measurement gives max(<i>p</i>, 1 &minus; <i>p</i>).</p>
+
+    <h3>3. Helstrom bound</h3>
+    <p>Over all measurements, including positive operator-valued measures (POVMs), the probability of a correct result is at most (Helstrom 1976)</p>
+    <p class="eq" data-tex="P_{\mathrm H} = \tfrac12\left(1 + \sqrt{1 - 4p(1-p)\,s^2}\right)"><span><i>P</i><sub>H</sub> = &frac12;[1 + (1 &minus; 4<i>p</i>(1 &minus; <i>p</i>)<i>s</i><sup>2</sup>)<sup>1/2</sup>]</span><span class="eqn">(3)</span></p>
+    <p>attained by the projective measurement onto the eigenvectors of <span class="m" data-tex="p\rho_+ - (1-p)\rho_-">p&rho;<sub>+</sub> &minus; (1 &minus; p)&rho;<sub>&minus;</sub></span>, which for <i>p</i> = 1/2 is the x axis, &beta; = 90 deg.</p>
+
+    <h3>4. Unambiguous discrimination</h3>
+    <p>The Ivanovic-Dieks-Peres (IDP) measurement is a three-outcome POVM, realised by a Neumark dilation with one ancilla: a rotation RY(2&gamma;) of the ancilla, controlled on the system in |0&rang;, with cos &gamma; = tan(&theta;/2), maps the two states to orthogonal states |&plusmn;&rang; when the ancilla reads 0 and to a common state when it reads 1. Then</p>
+    <p class="eq" data-tex="P_{\mathrm{corr}} = 1 - s, \qquad P_{?} = s, \qquad P_{\mathrm{err}} = 0"><span><i>P</i><sub>corr</sub> = 1 &minus; <i>s</i>,&emsp; <i>P</i><sub>?</sub> = <i>s</i>,&emsp; <i>P</i><sub>err</sub> = 0</span><span class="eqn">(4)</span></p>
+    <p>for either state. This is optimal for <i>p</i> = 1/2; for unequal priors the optimum differs (Jaeger and Shimony 1995) and is not implemented.</p>
+
+    <h3>5. Estimate</h3>
+    <p>Each run measures both states with <i>n</i> = 4000 shots and estimates</p>
+    <p class="eq" data-tex="\hat P = p\,\hat q_+ + (1-p)\,\hat q_-, \qquad \sigma_{\hat P}^2 = \frac{p^2 \hat q_+(1-\hat q_+) + (1-p)^2 \hat q_-(1-\hat q_-)}{n}"><span><i>P&#770;</i> = <i>p q&#770;</i><sub>+</sub> + (1 &minus; <i>p</i>)<i>q&#770;</i><sub>&minus;</sub>,&emsp; &sigma;<sup>2</sup> = [<i>p</i><sup>2</sup><i>q&#770;</i><sub>+</sub>(1 &minus; <i>q&#770;</i><sub>+</sub>) + (1 &minus; <i>p</i>)<sup>2</sup><i>q&#770;</i><sub>&minus;</sub>(1 &minus; <i>q&#770;</i><sub>&minus;</sub>)]/<i>n</i></span><span class="eqn">(5)</span></p>
+    <p>where <i>q&#770;</i><sub>&plusmn;</sub> is the fraction of correct identifications of &psi;<sub>&plusmn;</sub>.</p>
+
+    <h3>6. Example</h3>
+    <p>For <i>s</i> = 0.5 (&theta; = 60 deg) and <i>p</i> = 1/2: a measurement in the computational basis identifies &psi;<sub>+</sub> with probability cos<sup>2</sup>(30 deg) = 0.750 but &psi;<sub>&minus;</sub> only with sin<sup>2</sup>(30 deg) = 0.250, so <i>P</i>(0) = 0.500 (Eq. 2), equal to guessing; the x axis gives <i>P</i><sub>H</sub> = (1 + 0.866)/2 = 0.933 (Eq. 3); the IDP measurement gives <i>P</i><sub>corr</sub> = <i>P</i><sub>?</sub> = 0.500 and <i>P</i><sub>err</sub> = 0 (Eq. 4).</p>
+
+    <h3>7. Limitations</h3>
+    <p>States are pure, the states and a priori probabilities are known, and only one copy is measured. Circuits are noiseless on the built-in simulator. Two-state discrimination on one qubit is classically simulable; the page illustrates measurement limits and claims no speedup.</p>
+    </div>
+  </section>
+
+  <section class="refs" aria-labelledby="refs">
+    <h2 id="refs" class="theory-title">References</h2>
+    <ol>
+      <li>S. M. Barnett and S. Croke, Quantum state discrimination, <i>Adv. Opt. Photon.</i> 1, 238 (2009).</li>
+      <li>C. H. Bennett, Quantum cryptography using any two nonorthogonal states, <i>Phys. Rev. Lett.</i> 68, 3121 (1992).</li>
+      <li>D. Dieks, Overlap and distinguishability of quantum states, <i>Phys. Lett. A</i> 126, 303 (1988).</li>
+      <li>C. W. Helstrom, <i>Quantum Detection and Estimation Theory</i> (Academic Press, New York, 1976).</li>
+      <li>I. D. Ivanovic, How to differentiate between non-orthogonal states, <i>Phys. Lett. A</i> 123, 257 (1987).</li>
+      <li>G. Jaeger and A. Shimony, Optimal distinction between two non-orthogonal quantum states, <i>Phys. Lett. A</i> 197, 83 (1995).</li>
+      <li>A. Peres, How to differentiate between non-orthogonal states, <i>Phys. Lett. A</i> 128, 19 (1988).</li>
+    </ol>
+  </section>
+
+  <footer class="foot">This effort is supported by Qollab &amp; IonQ. MIT License.</footer>
+</div>

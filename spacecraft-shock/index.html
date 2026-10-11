@@ -1,0 +1,155 @@
+<div id="app">
+  <header class="head">
+    <div class="intro">
+      <h1>Quantum Simulation of Pyroshock</h1>
+      <p class="byline">B. Kaganovitch and Y. Ivanov, University of Toronto. Qollab x IonQ Hackathon, October 2026.</p>
+      <p class="lede">Pyrotechnic separation devices subject a spacecraft to pyroshock, a high-frequency transient that travels through the structure to sensitive equipment. Launch providers bound both the shock environment at the payload interface and the fixed-base fundamental frequency of the payload. Babbush et al. (2023) encode the velocities and spring extensions of coupled harmonic oscillators in the amplitudes of a quantum state, so that the energy fraction of each mass and spring is a measurement probability, and showed that under the conditions stated in the Introduction below the dynamics of 2<sup><i>n</i></sup> oscillators can be simulated in time polynomial in <i>n</i>. Here that encoding is applied to a lumped-parameter tree model of a 12U CubeSat (eight masses, four qubits) in which the battery, the avionics board and an optical instrument sit on their own mounts. The transient from separation is propagated through the structure, the acceleration of each component is obtained from the energy of its mount, and battery mounts and instrument isolators are compared against the launcher's 40 Hz requirement and the components' allowable accelerations. At this size the exact classical solution (Section 5) is instantaneous and every design conclusion on the page is drawn from it; the circuit estimates are shown beside it, and no practical advantage is claimed.</p>
+    </div>
+    <aside class="howto" aria-label="Usage">
+      <h2>Usage</h2>
+      <ol>
+        <li>Select the battery mount <i>k</i><sub>bat</sub> and the instrument isolator <i>k</i><sub>iso</sub>, or a cell of Fig. 2; the fixed-base fundamental frequency <i>f</i><sub>1</sub> is shown beside them.</li>
+        <li>Run circuits executes the selected design at eight times (8 circuits, 16384 shots each) on the selected backend; it runs once on load.</li>
+        <li>Play or the time slider steps through the eight times in Fig. 1.</li>
+      </ol>
+      <p class="keys"><span><kbd>1</kbd>-<kbd>5</kbd> isolator</span><span><kbd>B</kbd> battery mount</span><span><kbd>Left</kbd> <kbd>Right</kbd> time</span><span><kbd>P</kbd> play</span><span><kbd>R</kbd> run circuits</span></p>
+    </aside>
+  </header>
+
+  <section class="console" aria-label="Design and run">
+    <div class="ctl"><span class="ctl-label" id="batLabel">Battery mount <i>k</i><sub>bat</sub></span>
+    <div class="presets" role="radiogroup" aria-labelledby="batLabel" id="batGroup"></div></div>
+    <div class="ctl"><span class="ctl-label" id="isoLabel">Instrument isolator <i>k</i><sub>iso</sub></span>
+    <div class="presets" role="radiogroup" aria-labelledby="isoLabel" id="isoGroup"></div></div>
+    <p class="params" aria-label="Design properties">
+      <span><i>f</i><sub>1</sub> = <b id="pF1">-</b></span>
+      <span id="pOk">-</span>
+    </p>
+    <button id="run" class="primary" disabled>Run circuits</button>
+    <p class="status" id="status" role="status" aria-live="polite">Loading Qiskit and the model...</p>
+  </section>
+
+  <div class="stage">
+    <figure class="fig fig-stack">
+      <div class="figtitle-row">
+        <h2 class="figtitle">Energy distribution</h2>
+        <div class="timectl">
+          <button id="play" disabled aria-label="Play through the sampled times">Play</button>
+          <label class="slider"><span class="sr">Time after release</span><input id="tsl" type="range" min="0" max="8" step="1" value="8" disabled></label>
+          <span class="tval-inline" id="tLabel">t = -</span>
+        </div>
+      </div>
+      <div class="stackwrap"><svg id="stack" viewBox="0 0 640 560" role="img" aria-label="Energy of each mass and spring at the selected time"></svg></div>
+      <figcaption><b>Fig. 1.</b> Lumped-parameter tree model of a 12U CubeSat on a fixed base (launcher interface); battery and avionics board are mounted beside the power deck and upper frame. Block width is proportional to mass. At <i>t</i> = 0 the separation ring moves at <i>v</i><sub>0</sub> = 1.56 m/s (<i>E</i><sub>0</sub> = 2.44 J). Shading and blue bars: measured kinetic energy of each mass and potential energy of each spring, log scale; gold ticks: exact solution. A component is outlined once its acceleration has exceeded its allowable.</figcaption>
+    </figure>
+
+    <section class="readout" aria-label="Component response">
+      <p class="tlabel">Acceleration at <i>t</i>, measured</p>
+      <div class="tile">
+        <p class="tlabel" id="cn0">-</p>
+        <p class="tval" id="cv0">-</p>
+        <p class="tnote" id="ce0">-</p>
+        <p class="tnote" id="cf0">-</p>
+      </div>
+      <div class="tile">
+        <p class="tlabel" id="cn1">-</p>
+        <p class="tval" id="cv1">-</p>
+        <p class="tnote" id="ce1">-</p>
+        <p class="tnote" id="cf1">-</p>
+      </div>
+      <div class="tile">
+        <p class="tlabel" id="cn2">-</p>
+        <p class="tval" id="cv2">-</p>
+        <p class="tnote" id="ce2">-</p>
+        <p class="tnote" id="cf2">-</p>
+      </div>
+      <p class="verdict" id="verdict" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Design space</h2></div>
+      <div class="tablewrap" id="dtable"></div>
+      <figcaption><b>Fig. 2.</b> Exact outcome of each design within 3.7 ms of release: the first component to exceed its allowable and the time, or the largest acceleration as a percentage of its allowable. Measured designs also show the largest circuit estimate over the eight sampled times. Cells select the design.</figcaption>
+    </figure>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Component accelerations</h2></div>
+      <div id="tplot"></div>
+      <figcaption><b>Fig. 3.</b> Acceleration of each component relative to its allowable, Eq. (5), for the selected design. Gold: exact solution (dashed: battery; dotted: avionics board; solid: instrument); blue: circuit estimates with 1-sigma error bars; plum: allowable; crosses: first exceedance; dotted vertical line: time shown in Fig. 1. Markers: battery square, avionics board triangle, instrument circle.</figcaption>
+    </figure>
+    <figure class="fig">
+    <div class="figtitle-row"><h2 class="figtitle">Circuit</h2></div>
+    <div class="circwrap"><pre id="circuit" aria-label="Text drawing of one product-formula step">No circuit yet.</pre></div>
+    <p class="circ" id="circNote"></p>
+    <figcaption><b>Fig. 4.</b> One step of the product formula, Eq. (4), repeated up to 128 times. X prepares the initial state (separation ring); E and C are uniformly controlled RX rotations on q0, with -1 and +1 shifting the basis index so that chain couplings take the form of even ones; R applies the two branch couplings as two-level rotations. All angles are set by the spring constants and masses.</figcaption>
+  </figure>
+  </div>
+
+  <section class="theory" aria-labelledby="intro">
+    <div class="theory-cols">
+    <h2 id="intro" class="theory-title">Introduction</h2>
+    <p>Pyroshock from separation nuts, bolt cutters and frangible joints is characterised by accelerations of hundreds to thousands of g at frequencies up to 10 kHz (the SpaceX guide permits up to 2850 g SRS at the payload interface, Table 4-5) and can damage electronics and optics. Launch providers specify the shock response spectrum (SRS) at the payload interface together with a minimum fixed-base natural frequency, and sensitive instruments are often mounted on isolators, which attenuate the transmitted shock but lower that frequency. Babbush et al. (2023) proved that simulating 2<sup><i>n</i></sup> coupled classical oscillators is BQP-complete and can be done in time polynomial in <i>n</i> when masses and spring constants are accessible by oracle, the initial state is efficiently preparable and the output is an aggregate quantity such as an energy. An impulse applied at one point of a structure and the energy reaching one component are of this form.</p>
+
+    <h2 class="theory-title">Theory</h2>
+    <h3>1. Lumped-parameter model</h3>
+    <p>The CubeSat is a fixed-base axial tree of eight masses; each mass hangs from its parent by one spring. Main load path: separation ring 2 kg, lower frame 3 kg, power deck 4 kg, upper frame 5 kg, isolator plate 3 kg, optical instrument 3 kg; the battery (3 kg) is mounted on the power deck and the avionics board (1 kg) on the upper frame. The total is the 12U limit of 24.00 kg (CubeSat Design Specification Rev. 14.1, Table 1); the distribution is assumed. Structural springs have <i>k</i> = 3.5e7 N/m and the board mount 1.0e7 N/m. The design variables are the battery mount <i>k</i><sub>bat</sub> (3.5e7, 3.5e6 or 1.0e6 N/m) and the instrument isolator <i>k</i><sub>iso</sub> (3.5e7 to 2.0e5 N/m). The SpaceX Rideshare Payload User's Guide (v11, Sec. 4.1.1) requires <i>f</i><sub>1</sub> &ge; 40 Hz. The fixed base represents the launcher while the payload is still attached, and separation is idealised as an impulse: the separation ring starts at <i>v</i><sub>0</sub> = 1.56 m/s, the pseudo-velocity at the knee of the guide's maximum predicted shock environment, 1000 g at 1000 Hz (Table 4-5). Accelerations scale linearly with <i>v</i><sub>0</sub>, so this choice sets which designs pass.</p>
+
+    <h3>2. Quantum encoding</h3>
+    <p>With displacement vector <i>x</i>, mass matrix <i>M</i> and stiffness matrix</p>
+    <p class="eq" data-tex="M\ddot{x} = -Kx, \qquad K = \sum_e k_e\, u_e u_e^{\mathsf T}"><span><i>M</i>x'' = &minus;<i>Kx</i>,&emsp; <i>K</i> = &Sigma;<sub><i>e</i></sub> <i>k<sub>e</sub> u<sub>e</sub> u<sub>e</sub></i><sup>T</sup></span><span class="eqn">(1)</span></p>
+    <p>where <i>u</i><sub><i>e</i></sub> is the incidence vector of spring <i>e</i>, let <span class="m" data-tex="y = M^{1/2}x">y = M<sup>1/2</sup>x</span> and let <i>B</i> have columns <span class="m" data-tex="\sqrt{k_e}\,M^{-1/2}u_e">&radic;k<sub>e</sub> M<sup>&minus;1/2</sup>u<sub>e</sub></span>, so that <span class="m" data-tex="BB^{\mathsf T} = M^{-1/2}KM^{-1/2}">BB<sup>T</sup> = M<sup>&minus;1/2</sup>KM<sup>&minus;1/2</sup></span>. Following Babbush et al.,</p>
+    <p class="eq" data-tex="\psi = \begin{pmatrix}\dot y\\ iB^{\mathsf T}y\end{pmatrix},\ \ \dot\psi = -iH\psi,\ \ H = -\begin{pmatrix}0 & B\\ B^{\mathsf T} & 0\end{pmatrix}"><span>&psi; = (y', iB<sup>T</sup>y),&emsp; &psi;' = &minus;iH&psi;,&emsp; H = &minus;[[0, B], [B<sup>T</sup>, 0]]</span><span class="eqn">(2)</span></p>
+    <p>and</p>
+    <p class="eq" data-tex="\|\psi\|^2 = \sum_j m_j \dot x_j^2 + \sum_e k_e (u_e^{\mathsf T}x)^2 = 2E"><span>|&psi;|<sup>2</sup> = &Sigma;<sub><i>j</i></sub> <i>m<sub>j</sub></i> x'<sub><i>j</i></sub><sup>2</sup> + &Sigma;<sub><i>e</i></sub> <i>k<sub>e</sub></i>(<i>u<sub>e</sub></i>&middot;<i>x</i>)<sup>2</sup> = 2<i>E</i></span><span class="eqn">(3)</span></p>
+    <p>The outcome probabilities of a computational-basis measurement are therefore the kinetic energy fractions of the masses and the potential energy fractions of the springs. A tree of <i>N</i> masses on a fixed base has <i>N</i> springs, so eight masses and eight springs occupy 16 basis states of four qubits; in general <span class="m" data-tex="\lceil \log_2 2N \rceil">&lceil;log<sub>2</sub> 2N&rceil;</span> qubits. The impulse corresponds to a single basis state.</p>
+
+    <h3>3. Circuit</h3>
+    <p>Basis state 2<i>e</i> is spring <i>e</i> and 2<i>e</i>+1 is mass <i>e</i>. <i>H</i> then couples spring <i>e</i> to mass <i>e</i> with weight <span class="m" data-tex="\sqrt{k_e/m_e}">&radic;(k<sub>e</sub>/m<sub>e</sub>)</span> (even bonds) and to the parent mass <i>p</i> with weight <span class="m" data-tex="\sqrt{k_e/m_p}">&radic;(k<sub>e</sub>/m<sub>p</sub>)</span>; when <i>p</i> = <i>e</i> &minus; 1 these are chain bonds, otherwise branch bonds (upper frame and isolator plate). With <i>H</i> = <i>H</i><sub>E</sub> + <i>H</i><sub>C</sub> + <i>H</i><sub>R</sub>, each a sum of commuting two-level terms, the second-order product formula (Strang 1968)</p>
+    <p class="eq" data-tex="e^{-iH\,\delta t} = E(\tfrac{\delta t}{2})\,R(\tfrac{\delta t}{2})\,C(\delta t)\,R(\tfrac{\delta t}{2})\,E(\tfrac{\delta t}{2}) + \mathcal{O}(\delta t^3)"><span>e<sup>&minus;iH&delta;t</sup> = E(&delta;t/2) R(&delta;t/2) C(&delta;t) R(&delta;t/2) E(&delta;t/2) + O(&delta;t<sup>3</sup>)</span><span class="eqn">(4)</span></p>
+    <p>is implemented as follows. Even bonds couple basis states that differ in qubit 0, so <i>E</i>(<i>h</i>) is a uniformly controlled RX rotation on q0 (M&ouml;tt&ouml;nen et al. 2004) with angle <span class="m" data-tex="-2h\sqrt{k_e/m_e}">&minus;2h&radic;(k<sub>e</sub>/m<sub>e</sub>)</span> for control value <i>e</i>; <i>C</i>(<i>h</i>) is the same construction conjugated by the decrement <span class="m" data-tex="|p\rangle \to |p-1\rangle">|p&rang; &rarr; |p&minus;1&rang;</span>. Each branch bond in <i>R</i>(<i>h</i>) is a two-level rotation: a CX ladder maps its pair of basis states to states that differ in one qubit, followed by a uniformly controlled RX with a single non-zero angle. The rotation angles are computed from the spring constants and masses alone; the propagator is not computed classically. With 128 steps over 3.7 ms (&delta;<i>t</i> = 28.9 us) a step costs 96 CX gates and a circuit at most 12296.</p>
+
+    <h3>4. Observable and failure criterion</h3>
+    <p>Each component (battery, avionics board, instrument) is attached by a single spring, its mount, so its acceleration follows from the mount's potential energy <span class="m" data-tex="E_c = p_cE_0">E<sub>c</sub> = p<sub>c</sub>E<sub>0</sub></span>, where <i>p</i><sub><i>c</i></sub> is the probability of the mount's basis state and <i>E</i><sub>0</sub> = 2.44 J the release energy:</p>
+    <p class="eq" data-tex="|a_c| = \frac{\sqrt{2k_c\,p_cE_0}}{m_c},\ \ \sigma_{|a_c|} = \frac{|a_c|}{2}\,\frac{\sigma_p}{p_c}"><span>|a<sub>c</sub>| = &radic;(2k<sub>c</sub>p<sub>c</sub>E<sub>0</sub>)/m<sub>c</sub>,&emsp; &sigma;<sub>|a|</sub> = (|a<sub>c</sub>|/2) &sigma;<sub>p</sub>/p<sub>c</sub></span><span class="eqn">(5)</span></p>
+    <p>with <span class="m" data-tex="\sigma_p = \sqrt{p_c(1-p_c)/S}">&sigma;<sub>p</sub> = &radic;(p<sub>c</sub>(1&minus;p<sub>c</sub>)/S)</span> for <i>S</i> shots, so one circuit yields all three accelerations. As a toy failure criterion, a component fails when |<i>a</i><sub><i>c</i></sub>| first exceeds an allowable acceleration: 50 g for the battery, 200 g for the avionics board and 20 g for the instrument (illustrative values, not qualification levels). The predicted time of failure is the first crossing of the exact |<i>a</i><sub><i>c</i></sub>(<i>t</i>)|.</p>
+
+    <h3>5. Exact solution</h3>
+    <p>The classical baseline is modal superposition. The generalised eigenproblem <span class="m" data-tex="K\phi_r = \omega_r^2 M\phi_r">K&phi;<sub>r</sub> = &omega;<sub>r</sub><sup>2</sup>M&phi;<sub>r</sub></span> with mass-normalised modes, <span class="m" data-tex="\phi_r^{\mathsf T}M\phi_s = \delta_{rs}">&phi;<sub>r</sub><sup>T</sup>M&phi;<sub>s</sub> = &delta;<sub>rs</sub></span>, gives for the impulse <span class="m" data-tex="x(0) = 0,\ \dot x(0) = v_0 e_0">x(0) = 0, x'(0) = v<sub>0</sub>e<sub>0</sub></span></p>
+    <p class="eq" data-tex="x(t) = v_0 \sum_r \phi_r\,(\phi_r^{\mathsf T}M e_0)\,\frac{\sin\omega_r t}{\omega_r}, \qquad f_1 = \frac{\omega_1}{2\pi}"><span>x(t) = v<sub>0</sub> &Sigma;<sub>r</sub> &phi;<sub>r</sub>(&phi;<sub>r</sub><sup>T</sup>Me<sub>0</sub>) sin(&omega;<sub>r</sub>t)/&omega;<sub>r</sub>,&emsp; f<sub>1</sub> = &omega;<sub>1</sub>/2&pi;</span><span class="eqn">(6)</span></p>
+    <p>Equivalently, since <span class="m" data-tex="H^2 = \mathrm{diag}(BB^{\mathsf T}, B^{\mathsf T}B)">H<sup>2</sup> = diag(BB<sup>T</sup>, B<sup>T</sup>B)</span>, the eigenvalues of <i>H</i> are &plusmn;&omega;<sub><i>r</i></sub>, and with <span class="m" data-tex="H = V\Lambda V^{\dagger}">H = V&Lambda;V<sup>&dagger;</sup></span></p>
+    <p class="eq" data-tex="\psi(t) = V e^{-i\Lambda t} V^{\dagger}\,\psi(0)"><span>&psi;(t) = V e<sup>&minus;i&Lambda;t</sup> V<sup>&dagger;</sup> &psi;(0)</span><span class="eqn">(7)</span></p>
+    <p>which yields every energy fraction at any time. Dense diagonalisation costs O(<i>N</i><sup>3</sup>) operations and is instantaneous at <i>N</i> = 8; Eq. (7) agrees with direct numerical integration of Eq. (1) to 1e-8. All design conclusions on this page, including the predicted failure times, are drawn from it; the circuit estimates are shown beside it.</p>
+
+    <h3>6. Complexity</h3>
+    <p>The exponential speedup of Babbush et al. relies on a block encoding of <i>H</i> built from oracle access to masses and spring constants. The uniformly controlled rotations used here require 2<sup><i>n</i>&minus;1</sup> CX gates on <i>n</i> qubits, so each step costs O(<i>N</i>) gates, and at eight masses the classical solution is instantaneous; no practical advantage is claimed. Block-encoding circuits for chains are given by Luangsirapornchai et al. (2025) and Dsouza et al. (2026). An energy fraction to additive precision &epsilon; requires O(1/&epsilon;<sup>2</sup>) shots, or O(1/&epsilon;) with amplitude estimation; the full trajectory is not accessible. A web and arXiv search (October 11, 2026) found no earlier application of the algorithm to spacecraft structures or shock.</p>
+
+    <h3>7. Limitations</h3>
+    <p>The model is a one-dimensional axial tree with eight lumped masses; the mass distribution, mount stiffnesses and allowable accelerations are assumed. It is undamped, whereas the guide specifies Q = 10 to 50. The fixed base represents the launcher while the payload is still attached, and separation is idealised as an impulse. <i>v</i><sub>0</sub>, taken from the shock specification, sets the absolute accelerations and therefore which designs pass. The highest natural frequency of the model is about 1.1 kHz, so only the low-frequency part of the pyroshock band is represented. Base excitation (sine, random vibration) is not modelled. Results cover the first transit, 3.7 ms after release; in the undamped model later reflections can exceed these peaks. Product-formula bias at 128 steps is below 1.6 standard deviations of the shot noise at every sampled time of every design.</p>
+
+    <h2 class="theory-title">Further directions</h2>
+    <h3>General structures</h3>
+    <p>For a structure that is not a tree, or a tree whose branch bonds share masses, the couplings can be grouped into matchings by edge colouring, each matching a set of disjoint two-level rotations; the cost per step grows with the largest number of springs on one mass. A component attached by several springs requires the signed forces, which are not given by energy fractions alone.</p>
+    <h3>Finite-element scale</h3>
+    <p>Finite-element models of spacecraft have 10<sup>5</sup> to 10<sup>6</sup> degrees of freedom with sparse stiffness matrices. With oracle access to masses and spring constants, 10<sup>6</sup> degrees of freedom need about 21 to 23 qubits, and the quantities that decide survival, the energy transmitted into a component or the force in its mount, are aggregates of the kind for which Babbush et al. prove an exponential advantage. This requires the block encoding of refs. 2 and 3 and amplitude estimation for <span class="m" data-tex="\mathcal{O}(1/\epsilon)">O(1/&epsilon;)</span> sampling.</p>
+    <h3>Damping and other structures</h3>
+    <p>Structural damping (Q = 10 to 50) makes the dynamics non-unitary; it can be included by embedding the damped system in a larger unitary at the cost of ancilla qubits. The same equation, <i>M</i>x'' = &minus;<i>Kx</i>, governs buildings and bridges under seismic load, launch-vehicle stacks during stage separation and lattice vibrations in crystals, so the same encoding applies; structures that are not trees need the edge-colouring extension above.</p>
+    </div>
+  </section>
+
+  <section class="refs" aria-labelledby="refs">
+    <h2 id="refs" class="theory-title">References</h2>
+    <ol>
+      <li>R. Babbush, D. W. Berry, R. Kothari, R. D. Somma and N. Wiebe, Exponential quantum speedup in simulating coupled classical oscillators, <i>Phys. Rev. X</i> 13, 041041 (2023).</li>
+      <li>N. Luangsirapornchai, P. Sanglaor, A. Sornsaeng, S. Bressan, T. Chotibut, K. Suksen and P. Chongstitvatana, Practical quantum circuit implementation for simulating coupled classical oscillators, arXiv:2501.06100 (2025).</li>
+      <li>V. Dsouza, W. Golletz, D. Kranas, B. Dioum, V. Sahgal and E. Schirman, Quantum simulation of coupled harmonic oscillators: from theory to implementation, arXiv:2603.05479 (2026).</li>
+      <li>The CubeSat Program, Cal Poly SLO, CubeSat Design Specification, Rev. 14.1 (2022).</li>
+      <li>Space Exploration Technologies Corp., Rideshare Payload User's Guide, Version 11 (2026).</li>
+      <li>G. Strang, On the construction and comparison of difference schemes, <i>SIAM J. Numer. Anal.</i> 5, 506 (1968).</li>
+      <li>M. M&ouml;tt&ouml;nen, J. J. Vartiainen, V. Bergholm and M. M. Salomaa, Quantum circuits for general multiqubit gates, <i>Phys. Rev. Lett.</i> 93, 130502 (2004).</li>
+    </ol>
+  </section>
+
+  <footer class="foot">This effort is supported by Qollab &amp; IonQ. MIT License.</footer>
+</div>

@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockpick (preview)</title>
+<style>@import url("https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css");
+@import url("https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+
+/* Brand tokens: copied from /brand/tokens.css (Qollab loads only main.css). Guide: /brand/README.md.
+   Base rules follow projects/blackhole-supersampling/main.css so the team's pages match. */
+#app {
+  --ground: #16222b; --panel: #1c2c38; --rule: #2c3e4c;
+  --ink: #eeeeee; --ink-2: #b4b6bb; --ink-3: #9e9ea1;
+  --cern-blue: #0033a0; --cern-gold: #996c00; --cern-plum: #6e2466;
+  --quantum: #7aa2f7; --classical: #e0b24a; --third: #c77dba;
+  --err: #f08a7e;  /* failures only (brand: no green; success is shown in words) */
+  --serif: "STIX Two Text", "STIX Two", "Times New Roman", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --fs-cap: 0.8125rem; --fs-body: 1.0625rem; --fs-h3: 1.1875rem; --fs-h2: 1.5rem;
+  --fs-h1: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+  --s1: 0.25rem; --s2: 0.5rem; --s3: 0.75rem; --s4: 1rem; --s5: 1.5rem; --s6: 2.5rem;
+  --radius: 4px; --dur: 160ms;
+  color-scheme: dark;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--fs-body)/1.55 var(--serif);
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: var(--s6) max(16px, 3vw);
+  display: grid;
+  gap: var(--s6);
+}
+body { background: #16222b; margin: 0; }
+#app *, #app *::before, #app *::after { box-sizing: border-box; }
+#app p { margin: 0; }
+#app h1, #app h2 { font-family: var(--serif); text-wrap: balance; margin: 0; }
+#app h1 { font-size: var(--fs-h1); font-weight: 600; line-height: 1.1; letter-spacing: -0.005em; }
+#app h2 { font-size: var(--fs-h3); font-weight: 600; }
+#app abbr { text-decoration: none; }
+#app abbr.tip { position: relative; cursor: help; text-decoration: underline dotted var(--ink-3); text-decoration-thickness: 1px; text-underline-position: under; text-underline-offset: 1px; }
+#app abbr.tip::after { content: attr(data-tip); position: absolute; left: 0; top: calc(100% + 6px); z-index: 10; width: max-content; max-width: 260px; padding: 6px 9px; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); border-radius: var(--radius); font: 400 0.8125rem/1.4 var(--sans); font-style: normal; white-space: normal; display: none; pointer-events: none; }
+#app abbr.tip:hover::after, #app abbr.tip:focus-visible::after { display: block; }
+#app sub, #app sup { line-height: 0; }
+#app b { font-weight: 600; }
+#app kbd { display: inline-block; font: 500 0.75rem/1.5 var(--mono); vertical-align: 0.1em; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 3px; padding: 0 0.35em; color: var(--ink-2); background: var(--panel); }
+#app :focus-visible { outline: 2px solid var(--quantum); outline-offset: 2px; }
+#app :focus:not(:focus-visible) { outline: none; }
+
+/* Head */
+#app .head { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: var(--s6); align-items: end; }
+#app .intro { display: grid; gap: var(--s3); }
+#app .howto { display: grid; gap: var(--s2); padding-left: var(--s5); border-left: 1px solid var(--rule); font-family: var(--sans); font-size: 0.9375rem; color: var(--ink-2); }
+#app .howto h2 { font-family: var(--sans); font-size: var(--fs-cap); font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); }
+#app .howto ol { margin: 0; padding-left: 1.2em; display: grid; gap: var(--s1); }
+#app .howto b { color: var(--ink); font-weight: 600; }
+#app .keys { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s4); font: 400 var(--fs-cap) var(--sans); color: var(--ink-3); margin-top: var(--s2); }
+#app .keys span { display: inline-flex; align-items: center; gap: 0.3rem; line-height: 1; }
+#app .keys kbd { vertical-align: baseline; }
+#app .byline { font-size: var(--fs-cap); color: var(--ink-2); font-style: italic; }
+#app .lede { color: var(--ink-2); max-width: 64ch; font-size: 1.125rem; }
+#app .lede b { color: var(--ink); }
+
+/* Console strip */
+#app .console { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3) var(--s5); padding: var(--s3) var(--s4); background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); margin-bottom: calc(-1 * var(--s4)); }
+#app .presets { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+#app .preset { border: 0; border-right: 1px solid var(--rule); border-radius: 0; background: transparent; }
+#app .preset:last-child { border-right: 0; }
+#app .preset[aria-pressed="true"] { background: var(--cern-blue); color: #ffffff; }
+#app .params { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: 0.9375rem; color: var(--ink-2); }
+#app .params b { font: 500 var(--fs-cap) var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; margin-left: 0.2em; }
+#app .status { font: 400 var(--fs-cap) var(--sans); color: var(--quantum); }
+#app .status.err { color: var(--err); }
+#app .switch { display: inline-flex; align-items: center; gap: var(--s2); font: 400 var(--fs-cap)/1.3 var(--sans); color: var(--ink-2); min-height: 28px; cursor: pointer; }
+#app .switch input { margin: 0; width: 15px; height: 15px; flex: none; accent-color: var(--cern-blue); }
+#app .f0 { border: 0; border-right: 1px solid var(--rule); border-radius: 0; background: transparent; }
+#app .f0:last-child { border-right: 0; }
+#app .f0[aria-pressed="true"] { background: var(--cern-blue); color: #ffffff; }
+
+/* Controls */
+#app button { font: 500 0.9375rem var(--sans); color: var(--ink); background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); min-height: 44px; padding: 0 var(--s4); cursor: pointer; transition: background var(--dur), border-color var(--dur); }
+#app button:hover:not(:disabled) { border-color: var(--ink-3); }
+#app button:disabled { opacity: 0.45; cursor: not-allowed; }
+#app button.primary { background: var(--cern-blue); border-color: var(--cern-blue); color: #ffffff; }
+#app button.primary:hover:not(:disabled) { background: #0a40b8; }
+
+/* Figures */
+#app .fig { margin: 0; display: grid; gap: var(--s3); min-width: 0; align-content: start; }
+#app figcaption { font-size: var(--fs-cap); color: var(--ink-2); line-height: 1.45; max-width: 80ch; }
+#app figcaption b { color: var(--ink); }
+#app .figtitle-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s2); min-height: 44px; }
+#app .figtitle { font-size: var(--fs-h3); font-weight: 600; margin: 0; }
+#app .actions { display: flex; gap: var(--s2); }
+
+/* Score tiles */
+#app .score { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: var(--s4); border-block: 1px solid var(--rule); padding-block: var(--s4); }
+#app .tile { display: grid; gap: var(--s1); align-content: start; min-width: 0; }
+#app .tlabel { font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); white-space: nowrap; }
+#app .tval { font: 500 1.5rem var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+#app .tval.bad { color: var(--err); }
+#app .tnote { font-size: var(--fs-cap); color: var(--ink-2); }
+#app .verdict { grid-column: 1 / -1; font: 400 var(--fs-cap)/1.45 var(--sans); color: var(--ink-2); min-height: 1.45em; }
+
+/* Log and circuit */
+#app .figrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: var(--s6); align-items: start; }
+#app svg { display: block; -webkit-user-select: none; user-select: none; }
+#app svg text { fill: var(--ink-3); font: 400 10px var(--mono); }
+#app .note, #app .circ { font-size: var(--fs-cap); color: var(--ink-2); }
+#app .tablewrap { overflow-x: auto; }
+#app table { border-collapse: collapse; width: 100%; font-size: var(--fs-cap); }
+#app th, #app td { padding: 0.3rem 0.45rem; border-bottom: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+#app th { font-weight: 400; color: var(--ink-2); }
+#app td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+#app td.op { font-family: var(--sans); text-align: left; color: var(--ink); }
+#app td.miss { color: var(--ink-3); font-family: var(--sans); }
+#app td.barcell, #app th.barcell { width: 140px; }
+#app .barsvg { display: block; width: 140px; height: 18px; overflow: visible; }
+#app .circwrap { overflow-x: auto; background: #0f181f; border: 1px solid var(--rule); border-radius: var(--radius); }
+#app pre { margin: 0; padding: var(--s3); font: 400 11px/1.25 var(--mono); color: var(--ink-2); white-space: pre; }
+
+/* Theory: two columns after the demo, as on the team's other pages */
+#app .theory { display: grid; gap: var(--s4); border-top: 1px solid var(--rule); padding-top: var(--s5); }
+#app .theory-cols { columns: 2 340px; column-gap: var(--s6); column-rule: 1px solid var(--rule); }
+#app .theory-cols > * { margin: 0 0 var(--s3); }
+#app .theory-cols h3, #app .theory-cols .eq { break-inside: avoid; }
+#app .theory-cols h3 { break-after: avoid; }
+#app .theory-cols h2 { break-after: avoid; margin-bottom: var(--s2); }
+#app .theory-cols h2 + h3 { margin-top: 0; }
+#app .theory-cols h2:not(:first-child) { margin-top: var(--s5); }
+#app .theory-title { font-size: var(--fs-h2); font-weight: 600; }
+#app .theory h3 { font-size: var(--fs-h3); font-weight: 600; margin: var(--s3) 0 0; }
+#app .theory p { color: var(--ink-2); }
+#app .m .katex { font-size: 1em; }
+#app .eq .katex { font-size: 1.05em; color: var(--ink); }
+#app .eq .katex-display { margin: 0; }
+#app .eq { display: flex; justify-content: center; align-items: center; position: relative; color: var(--ink) !important; font-size: 1.0625rem; padding: var(--s1) 2.5rem; text-align: center; flex-wrap: wrap; overflow-x: auto; }
+#app .eqn { position: absolute; right: 0; font-size: var(--fs-body); color: var(--ink-2); }
+/* References: numbered list after Theory */
+#app .refs { display: grid; gap: var(--s3); border-top: 1px solid var(--rule); padding-top: var(--s5); }
+#app .refs ol { margin: 0; padding-left: 1.6em; columns: 2 340px; column-gap: var(--s6); font-size: var(--fs-cap); color: var(--ink-2); line-height: 1.45; }
+#app .refs li { break-inside: avoid; margin: 0 0 var(--s2); }
+#app .foot { font-size: var(--fs-cap); color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: var(--s4); }
+
+@media (prefers-reduced-motion: reduce) {
+  #app *, #app *::before, #app *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+/* Lockpick */
+#app .console label.ctl { display: inline-flex; align-items: center; gap: var(--s2); font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); }
+#app .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; }
+#app .seg label { position: relative; display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--s3); font: 500 0.875rem var(--sans); color: var(--ink); border-right: 1px solid var(--rule); cursor: pointer; transition: background var(--dur); }
+#app .seg label:last-child { border-right: 0; }
+#app .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+#app .seg label:has(input:checked) { background: var(--cern-blue); color: #ffffff; }
+#app .seg label:has(input:focus-visible) { outline: 2px solid var(--quantum); outline-offset: -2px; }
+#app .seg-name { font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); margin-right: var(--s1); }
+#app .group { display: inline-flex; align-items: center; gap: var(--s2); }
+#app .beta { display: flex; align-items: center; gap: var(--s3); flex: 1 1 260px; font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); }
+#app .beta input[type=range] { flex: 1; accent-color: var(--cern-blue); min-height: 32px; }
+#app .beta output { font: 500 0.9375rem var(--mono); color: var(--ink); font-variant-numeric: tabular-nums; min-width: 6ch; text-align: right; }
+#app .bloch { width: 100%; max-width: 420px; margin: 0 auto; touch-action: none; cursor: crosshair; }
+#app .bloch text, #app .pplot text { fill: var(--ink-2); font: 400 12px var(--mono); }
+#app .bloch text.lbl { fill: var(--ink); font: italic 400 15px var(--serif); }
+#app .pplot { width: 100%; height: auto; }
+#app .legend { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); }
+#app .legend span { display: inline-flex; align-items: center; gap: 6px; }
+#app .legend svg { width: 26px; height: 10px; }
+#app .bars { display: grid; gap: var(--s2); }
+#app .barrow { display: grid; grid-template-columns: 9.5rem 1fr; align-items: center; gap: var(--s3); font: 400 var(--fs-cap) var(--sans); color: var(--ink-2); }
+#app .barrow svg { width: 100%; height: 22px; overflow: visible; }
+@media (max-width: 720px) {
+  #app .head { grid-template-columns: 1fr; gap: var(--s5); }
+  #app .howto { padding-left: 0; border-left: 0; border-top: 1px solid var(--rule); padding-top: var(--s4); }
+  #app .barrow { grid-template-columns: 1fr; gap: 2px; }
+}
+</style></head>
+<body>
+<div id="app">
+  <header class="head">
+    <div class="intro">
+      <h1>Lockpick</h1>
+      <p class="byline">B. Kaganovitch and Y. Ivanov, University of Toronto. Qollab x IonQ Hackathon, October 2026.</p>
+      <p class="lede">No measurement distinguishes two non-orthogonal states with certainty. The lowest attainable error probability is the Helstrom bound; the Ivanovic-Dieks-Peres measurement instead never errs but sometimes returns no answer. The same limit bounds what an eavesdropper learns from a single intercepted state in two-state key distribution. Here a lock holds a qubit in one of two known states. The reader chooses the measurement; each choice runs as a circuit on the selected backend and is compared with both limits.</p>
+    </div>
+    <aside class="howto" aria-label="Usage">
+      <h2>Usage</h2>
+      <ol>
+        <li>Select the overlap <i>s</i> of the two lock states and the a priori probability <i>p</i> of &psi;<sub>+</sub>.</li>
+        <li>Set the measurement axis &beta; by dragging in Fig. 1 or with the slider; Fig. 2 shows the predicted probability of a correct result (Eq. 2).</li>
+        <li><b>Measure</b> runs the circuit for both lock states. <b>Unambiguous</b> switches to unambiguous discrimination (Eq. 4).</li>
+      </ol>
+      <p class="keys"><span><kbd>&larr;</kbd><kbd>&rarr;</kbd> &beta; (Shift: 10 deg)</span><span><kbd>Enter</kbd> measure</span><span><kbd>1</kbd>-<kbd>3</kbd> overlap</span><span><kbd>P</kbd> a priori <i>p</i></span><span><kbd>U</kbd> measurement</span><span><kbd>O</kbd> Helstrom axis</span></p>
+    </aside>
+  </header>
+
+  <section class="console" aria-label="Lock setup">
+    <div class="group"><span class="seg-name">Overlap</span>
+      <div class="seg" role="radiogroup" aria-label="Overlap s">
+        <label><input type="radio" name="s" value="0.25">s = 0.25</label>
+        <label><input type="radio" name="s" value="0.5" checked>0.50</label>
+        <label><input type="radio" name="s" value="0.75">0.75</label>
+      </div>
+    </div>
+    <div class="group"><span class="seg-name">A priori</span>
+      <div class="seg" role="radiogroup" aria-label="A priori probability p of psi+">
+        <label><input type="radio" name="p" value="0.5" checked>p = 0.50</label>
+        <label><input type="radio" name="p" value="0.75">0.75</label>
+        <label><input type="radio" name="p" value="0.9">0.90</label>
+      </div>
+    </div>
+    <div class="group"><span class="seg-name">Measurement</span>
+      <div class="seg" role="radiogroup" aria-label="Measurement">
+        <label><input type="radio" name="mode" value="min" checked>Minimum-error</label>
+        <label><input type="radio" name="mode" value="usd">Unambiguous</label>
+      </div>
+    </div>
+    <label class="beta">&beta;<input id="beta" type="range" min="0" max="180" step="1" value="0" aria-label="Measurement axis beta in degrees"><output id="betaOut">0 deg</output></label>
+    <label class="switch"><input id="showOpt" type="checkbox"><span>show Helstrom axis</span></label>
+    <button id="measure" class="primary" disabled>Measure</button>
+    <p class="status" id="status" role="status" aria-live="polite">Loading Qiskit...</p>
+  </section>
+
+  <section class="score" aria-label="Result">
+    <div class="tile"><p class="tlabel"><i>P</i><sub>corr</sub>, measured</p><p class="tval" id="sP">-</p><p class="tnote" id="sPn">-</p></div>
+    <div class="tile"><p class="tlabel"><i>P</i><sub>corr</sub>, Eq. (2) or (4)</p><p class="tval" id="sE">-</p><p class="tnote" id="sEn">-</p></div>
+    <div class="tile"><p class="tlabel">Helstrom bound <i>P</i><sub>H</sub>, Eq. (3)</p><p class="tval" id="sH">-</p><p class="tnote" id="sHn">-</p></div>
+    <div class="tile"><p class="tlabel">Guessing, max(<i>p</i>, 1 &minus; <i>p</i>)</p><p class="tval" id="sG">-</p><p class="tnote">no measurement</p></div>
+    <p class="verdict" id="verdict" aria-live="polite"></p>
+  </section>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Lock states and measurement axis</h2></div>
+      <svg id="bloch" class="bloch" viewBox="-160 -160 320 320" role="img" aria-label="Great circle of the Bloch sphere through the two lock states and the measurement axis"></svg>
+      <figcaption><b>Fig. 1.</b> The x-z great circle of the Bloch sphere. White: lock states &psi;<sub>+</sub> and &psi;<sub>&minus;</sub> at polar angles &plusmn;&theta;, with <i>s</i> = cos &theta;. Blue: measurement axis at angle &beta;; the + outcome is read as &psi;<sub>+</sub>. Plum, dashed: the Helstrom axis.</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Success probability against &beta;</h2></div>
+      <svg id="pplot" class="pplot" viewBox="0 0 440 280" role="img" aria-label="Success probability against measurement angle"></svg>
+      <div class="legend" aria-hidden="true">
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#7aa2f7" stroke-width="2"/></svg>Eq. (2)</span>
+        <span><svg viewBox="0 0 26 10"><circle cx="13" cy="5" r="3.5" fill="#7aa2f7"/></svg>measured, 1 sigma</span>
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#c77dba" stroke-width="2" stroke-dasharray="5 3"/></svg>Helstrom bound</span>
+        <span><svg viewBox="0 0 26 10"><line x1="0" y1="5" x2="26" y2="5" stroke="#e0b24a" stroke-width="2" stroke-dasharray="1.5 3"/></svg>guessing</span>
+      </div>
+      <figcaption><b>Fig. 2.</b> Probability of a correct identification against &beta; for the selected <i>s</i> and <i>p</i>. Points: measured <i>P</i><sub>corr</sub> at <span id="shots">4000</span> shots per state, weighted by the a priori probabilities (Eq. 5).</figcaption>
+    </figure>
+  </div>
+
+  <div class="figrow">
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Outcomes</h2></div>
+      <div class="bars" id="bars"><p class="note">No measurement yet.</p></div>
+      <figcaption><b>Fig. 3.</b> <i>P</i><sub>corr</sub>, <i>P</i><sub>err</sub> and <i>P</i><sub>?</sub> in the last run of each measurement, weighted by the a priori probabilities. Blue: correct; red: error; grey: inconclusive. Ticks: Eqs. (2)-(4).</figcaption>
+    </figure>
+    <figure class="fig">
+      <div class="figtitle-row"><h2 class="figtitle">Last circuit</h2></div>
+      <div class="circwrap"><pre id="circuit" aria-label="Text drawing of the last circuit">No circuit yet.</pre></div>
+      <p class="circ" id="circNote"></p>
+      <figcaption><b>Fig. 4.</b> q0 is prepared in &psi;<sub>+</sub> and q1 in &psi;<sub>&minus;</sub>, so one job measures both. Minimum-error: RY(&minus;&beta;), then measurement in the computational basis. Unambiguous: ancillas q2 and q3 implement Eq. (4).</figcaption>
+    </figure>
+  </div>
+
+  <section class="theory" aria-labelledby="intro">
+    <div class="theory-cols">
+    <h2 id="intro" class="theory-title">Introduction</h2>
+    <p>Distinguishing two known quantum states is the elementary problem of quantum detection theory (Helstrom 1976). It sets the information available to an eavesdropper on two-state key distribution (Bennett 1992) and the error rate of receivers for weak coherent light. The two standard strategies (Barnett and Croke 2009) minimise the error probability, or exclude errors and accept inconclusive results (Ivanovic 1987; Dieks 1988; Peres 1988). Both are realised here as circuits on one qubit per lock state, with one ancilla per state for the unambiguous measurement.</p>
+
+    <h2 class="theory-title">Theory</h2>
+    <h3>1. Lock states</h3>
+    <p>The lock holds, with a priori probabilities <i>p</i> and 1 &minus; <i>p</i>,</p>
+    <p class="eq" data-tex="|\psi_\pm\rangle = \cos\tfrac{\theta}{2}\,|0\rangle \pm \sin\tfrac{\theta}{2}\,|1\rangle, \qquad s = \langle\psi_+|\psi_-\rangle = \cos\theta"><span>|&psi;<sub>&plusmn;</sub>&rang; = cos(&theta;/2)|0&rang; &plusmn; sin(&theta;/2)|1&rang;,&emsp; <i>s</i> = cos &theta;</span><span class="eqn">(1)</span></p>
+    <p>They lie at polar angles &plusmn;&theta; in the x-z plane of the Bloch sphere and are prepared by RY(&plusmn;&theta;) on |0&rang;.</p>
+
+    <h3>2. Projective measurement</h3>
+    <p>A projective measurement along the Bloch axis at angle &beta; (RY(&minus;&beta;), then Z) with outcome + read as &psi;<sub>+</sub> gives a correct result with probability</p>
+    <p class="eq" data-tex="P(\beta) = p\,\frac{1+\cos(\beta-\theta)}{2} + (1-p)\,\frac{1-\cos(\beta+\theta)}{2}"><span><i>P</i>(&beta;) = <i>p</i>[1 + cos(&beta; &minus; &theta;)]/2 + (1 &minus; <i>p</i>)[1 &minus; cos(&beta; + &theta;)]/2</span><span class="eqn">(2)</span></p>
+    <p>&beta; = 0 is a measurement in the computational basis. Guessing without measurement gives max(<i>p</i>, 1 &minus; <i>p</i>).</p>
+
+    <h3>3. Helstrom bound</h3>
+    <p>Over all measurements, including positive operator-valued measures (POVMs), the probability of a correct result is at most (Helstrom 1976)</p>
+    <p class="eq" data-tex="P_{\mathrm H} = \tfrac12\left(1 + \sqrt{1 - 4p(1-p)\,s^2}\right)"><span><i>P</i><sub>H</sub> = &frac12;[1 + (1 &minus; 4<i>p</i>(1 &minus; <i>p</i>)<i>s</i><sup>2</sup>)<sup>1/2</sup>]</span><span class="eqn">(3)</span></p>
+    <p>attained by the projective measurement onto the eigenvectors of <span class="m" data-tex="p\rho_+ - (1-p)\rho_-">p&rho;<sub>+</sub> &minus; (1 &minus; p)&rho;<sub>&minus;</sub></span>, which for <i>p</i> = 1/2 is the x axis, &beta; = 90 deg.</p>
+
+    <h3>4. Unambiguous discrimination</h3>
+    <p>The Ivanovic-Dieks-Peres (IDP) measurement is a three-outcome POVM, realised by a Neumark dilation with one ancilla: a rotation RY(2&gamma;) of the ancilla, controlled on the system in |0&rang;, with cos &gamma; = tan(&theta;/2), maps the two states to orthogonal states |&plusmn;&rang; when the ancilla reads 0 and to a common state when it reads 1. Then</p>
+    <p class="eq" data-tex="P_{\mathrm{corr}} = 1 - s, \qquad P_{?} = s, \qquad P_{\mathrm{err}} = 0"><span><i>P</i><sub>corr</sub> = 1 &minus; <i>s</i>,&emsp; <i>P</i><sub>?</sub> = <i>s</i>,&emsp; <i>P</i><sub>err</sub> = 0</span><span class="eqn">(4)</span></p>
+    <p>for either state. This is optimal for <i>p</i> = 1/2; for unequal priors the optimum differs (Jaeger and Shimony 1995) and is not implemented.</p>
+
+    <h3>5. Estimate</h3>
+    <p>Each run measures both states with <i>n</i> = 4000 shots and estimates</p>
+    <p class="eq" data-tex="\hat P = p\,\hat q_+ + (1-p)\,\hat q_-, \qquad \sigma_{\hat P}^2 = \frac{p^2 \hat q_+(1-\hat q_+) + (1-p)^2 \hat q_-(1-\hat q_-)}{n}"><span><i>P&#770;</i> = <i>p q&#770;</i><sub>+</sub> + (1 &minus; <i>p</i>)<i>q&#770;</i><sub>&minus;</sub>,&emsp; &sigma;<sup>2</sup> = [<i>p</i><sup>2</sup><i>q&#770;</i><sub>+</sub>(1 &minus; <i>q&#770;</i><sub>+</sub>) + (1 &minus; <i>p</i>)<sup>2</sup><i>q&#770;</i><sub>&minus;</sub>(1 &minus; <i>q&#770;</i><sub>&minus;</sub>)]/<i>n</i></span><span class="eqn">(5)</span></p>
+    <p>where <i>q&#770;</i><sub>&plusmn;</sub> is the fraction of correct identifications of &psi;<sub>&plusmn;</sub>.</p>
+
+    <h3>6. Example</h3>
+    <p>For <i>s</i> = 0.5 (&theta; = 60 deg) and <i>p</i> = 1/2: a measurement in the computational basis identifies &psi;<sub>+</sub> with probability cos<sup>2</sup>(30 deg) = 0.750 but &psi;<sub>&minus;</sub> only with sin<sup>2</sup>(30 deg) = 0.250, so <i>P</i>(0) = 0.500 (Eq. 2), equal to guessing; the x axis gives <i>P</i><sub>H</sub> = (1 + 0.866)/2 = 0.933 (Eq. 3); the IDP measurement gives <i>P</i><sub>corr</sub> = <i>P</i><sub>?</sub> = 0.500 and <i>P</i><sub>err</sub> = 0 (Eq. 4).</p>
+
+    <h3>7. Limitations</h3>
+    <p>States are pure, the states and a priori probabilities are known, and only one copy is measured. Circuits are noiseless on the built-in simulator. Two-state discrimination on one qubit is classically simulable; the page illustrates measurement limits and claims no speedup.</p>
+    </div>
+  </section>
+
+  <section class="refs" aria-labelledby="refs">
+    <h2 id="refs" class="theory-title">References</h2>
+    <ol>
+      <li>S. M. Barnett and S. Croke, Quantum state discrimination, <i>Adv. Opt. Photon.</i> 1, 238 (2009).</li>
+      <li>C. H. Bennett, Quantum cryptography using any two nonorthogonal states, <i>Phys. Rev. Lett.</i> 68, 3121 (1992).</li>
+      <li>D. Dieks, Overlap and distinguishability of quantum states, <i>Phys. Lett. A</i> 126, 303 (1988).</li>
+      <li>C. W. Helstrom, <i>Quantum Detection and Estimation Theory</i> (Academic Press, New York, 1976).</li>
+      <li>I. D. Ivanovic, How to differentiate between non-orthogonal states, <i>Phys. Lett. A</i> 123, 257 (1987).</li>
+      <li>G. Jaeger and A. Shimony, Optimal distinction between two non-orthogonal quantum states, <i>Phys. Lett. A</i> 197, 83 (1995).</li>
+      <li>A. Peres, How to differentiate between non-orthogonal states, <i>Phys. Lett. A</i> 128, 19 (1988).</li>
+    </ol>
+  </section>
+
+  <footer class="foot">This effort is supported by Qollab &amp; IonQ. MIT License.</footer>
+</div>
+
+<script type="module">// Page logic. Circuits live in Python (hl/app.py); `backend` is injected by Qollab.
+
+const binom = (n, p) => { let k = 0; for (let i = 0; i < n; i++) if (Math.random() < p) k++; return k; };
+const app = { measure: { callPromising: async (b, th, beta, mode) => {
+  await new Promise((r) => setTimeout(r, 150));
+  const n = 4000, c = Math.cos(th);
+  const pc = mode === 'usd' ? [1 - c, 1 - c] : [(1 + Math.cos(beta - th)) / 2, (1 - Math.cos(beta + th)) / 2];
+  const tally = pc.map((q) => { const k = binom(n, q); return mode === 'usd' ? [k, 0, n - k] : [k, n - k, 0]; });
+  return JSON.stringify({ tally, shots: n, qubits: mode === 'usd' ? 4 : 2, depth: 6, cx: mode === 'usd' ? 4 : 0, backend: 'preview (sampled from exact probabilities)', ionq: false, seconds: 0.15, drawing: '(circuit drawing appears on Qollab)' });
+} } };
+const backend = { name: 'preview' };
+
+
+const $ = (id) => document.getElementById(id);
+const D = Math.PI / 180;
+const S = { s: 0.5, p: 0.5, mode: 'min', beta: 0, pts: [], last: { min: null, usd: null }, busy: false, ranOnce: false, ionq: false, ready: false };
+const theta = () => Math.acos(S.s);
+const Pb = (b) => S.p * (1 + Math.cos(b - theta())) / 2 + (1 - S.p) * (1 - Math.cos(b + theta())) / 2;
+const PH = () => 0.5 * (1 + Math.sqrt(1 - 4 * S.p * (1 - S.p) * S.s * S.s));
+const guess = () => Math.max(S.p, 1 - S.p);
+function optBeta() {
+  let best = 0, bv = -1;
+  for (let i = 0; i <= 1800; i++) { const v = Pb(i * 0.1 * D); if (v > bv) { bv = v; best = i * 0.1; } }
+  return best;
+}
+const f3 = (x) => x.toFixed(3);
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent, text) {
+  const e = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const C = { q: '#7aa2f7', c: '#e0b24a', ref: '#c77dba', ink: '#eeeeee', ink2: '#b4b6bb', ink3: '#9e9ea1', rule: '#2c3e4c', err: '#f08a7e' };
+const setStatus = (t, bad = false) => { $('status').textContent = t; $('status').classList.toggle('err', bad); };
+
+// ---------- Fig. 1: x-z great circle ----------
+const R = 120;
+const xy = (phi, r = R) => [r * Math.sin(phi), -r * Math.cos(phi)];
+function drawBloch() {
+  const g = $('bloch');
+  g.replaceChildren();
+  el('circle', { cx: 0, cy: 0, r: R, fill: 'none', stroke: C.rule, 'stroke-width': 1.5 }, g);
+  el('line', { x1: 0, y1: -R - 8, x2: 0, y2: R + 8, stroke: C.rule }, g);
+  el('line', { x1: -R - 8, y1: 0, x2: R + 8, y2: 0, stroke: C.rule }, g);
+  el('text', { x: 4, y: -R - 12 }, g, '|0>');
+  el('text', { x: 4, y: R + 22 }, g, '|1>');
+  el('text', { x: R + 6, y: -4 }, g, '|+>');
+  el('text', { x: -R - 30, y: -4 }, g, '|->');
+  if ($('showOpt').checked && S.mode === 'min') {
+    const o = optBeta() * D, [a, b] = xy(o);
+    el('line', { x1: -a, y1: -b, x2: a, y2: b, stroke: C.ref, 'stroke-width': 2, 'stroke-dasharray': '6 4' }, g);
+  }
+  if (S.mode === 'min') {
+    const [a, b] = xy(S.beta * D);
+    el('line', { x1: -a, y1: -b, x2: a, y2: b, stroke: C.q, 'stroke-width': 2.5 }, g);
+    el('circle', { cx: a, cy: b, r: 7, fill: C.q }, g);
+    el('text', { x: a * 1.17 - 4, y: b * 1.17 + 4, fill: C.q, style: `fill:${C.q}` }, g, '+');
+    el('text', { x: -a * 1.17 - 4, y: -b * 1.17 + 4, style: `fill:${C.q}` }, g, '-');
+  }
+  for (const [sgn, name] of [[1, 'ψ+'], [-1, 'ψ−']]) {
+    const [a, b] = xy(sgn * theta());
+    el('line', { x1: 0, y1: 0, x2: a, y2: b, stroke: C.ink, 'stroke-width': 2 }, g);
+    el('circle', { cx: a, cy: b, r: 4.5, fill: C.ink }, g);
+    el('text', { x: a + (sgn > 0 ? 8 : -30), y: b - 6, class: 'lbl' }, g, name);
+  }
+  // overlap arc between the two states
+  const [a1, b1] = xy(theta(), 34), [a2, b2] = xy(-theta(), 34);
+  el('path', { d: `M ${a2} ${b2} A 34 34 0 0 1 ${a1} ${b1}`, fill: 'none', stroke: C.ink3 }, g);
+  el('text', { x: -16, y: -40 }, g, `2θ=${Math.round(2 * theta() / D)}`);
+}
+function bindDrag() {
+  const svg = $('bloch');
+  const set = (ev) => {
+    if (S.mode !== 'min') return;
+    const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+    const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    // the axis is undirected for dragging: a pointer in the left half sets the antipodal angle
+    const b = Math.atan2(p.x, -p.y) / D;
+    S.beta = Math.round(b < 0 ? b + 180 : b) % 181;
+    sync();
+  };
+  let down = false;
+  svg.addEventListener('pointerdown', (e) => { e.preventDefault(); down = true; svg.setPointerCapture(e.pointerId); set(e); });
+  svg.addEventListener('pointermove', (e) => { if (down) set(e); });
+  svg.addEventListener('pointerup', () => { down = false; });
+}
+
+// ---------- Fig. 2: P(beta) ----------
+const PW = 440, PHt = 280, M = { l: 56, r: 12, t: 12, b: 36 };
+const X = (deg) => M.l + (deg / 180) * (PW - M.l - M.r);
+const Y = (v) => M.t + (1 - v) * (PHt - M.t - M.b);
+function drawPlot() {
+  const g = $('pplot');
+  g.replaceChildren();
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
+    el('line', { x1: M.l, x2: PW - M.r, y1: Y(v), y2: Y(v), stroke: C.rule }, g);
+    el('text', { x: M.l - 6, y: Y(v) + 4, 'text-anchor': 'end' }, g, v.toFixed(2));
+  }
+  for (const d of [0, 45, 90, 135, 180]) el('text', { x: X(d), y: PHt - M.b + 16, 'text-anchor': 'middle' }, g, String(d));
+  el('text', { x: (M.l + PW - M.r) / 2, y: PHt - 4, 'text-anchor': 'middle' }, g, 'beta (deg)');
+  el('text', { x: 10, y: Y(0.5), 'text-anchor': 'middle', transform: `rotate(-90 10 ${Y(0.5)})` }, g, 'P');
+  if (S.mode === 'usd') {
+    el('line', { x1: M.l, x2: PW - M.r, y1: Y(1 - S.s), y2: Y(1 - S.s), stroke: C.q, 'stroke-width': 2, 'stroke-dasharray': '8 3' }, g);
+    el('text', { x: PW - M.r - 4, y: Y(1 - S.s) + 16, 'text-anchor': 'end', style: `fill:${C.q}` }, g, 'unambiguous: 1 - s, no errors');
+  }
+  el('line', { x1: M.l, x2: PW - M.r, y1: Y(guess()), y2: Y(guess()), stroke: C.c, 'stroke-width': 2, 'stroke-dasharray': '1.5 3' }, g);
+  el('line', { x1: M.l, x2: PW - M.r, y1: Y(PH()), y2: Y(PH()), stroke: C.ref, 'stroke-width': 2, 'stroke-dasharray': '5 3' }, g);
+  let d = '';
+  for (let i = 0; i <= 180; i++) d += `${i ? 'L' : 'M'}${X(i).toFixed(1)} ${Y(Pb(i * D)).toFixed(1)}`;
+  el('path', { d, fill: 'none', stroke: C.q, 'stroke-width': 2, opacity: S.mode === 'min' ? 1 : 0.35 }, g);
+  if (S.mode === 'min') el('line', { x1: X(S.beta), x2: X(S.beta), y1: M.t, y2: PHt - M.b, stroke: C.ink3, 'stroke-dasharray': '2 3' }, g);
+  for (const q of S.pts.filter((q) => q.s === S.s && q.p === S.p)) {
+    el('line', { x1: X(q.beta), x2: X(q.beta), y1: Y(q.P + q.se), y2: Y(q.P - q.se), stroke: C.q, 'stroke-width': 1.5 }, g);
+    el('circle', { cx: X(q.beta), cy: Y(q.P), r: 3.5, fill: C.q }, g);
+  }
+}
+
+// ---------- Fig. 3: outcome bars ----------
+function bar(parent, frac, ticks) {
+  const svg = el('svg', { viewBox: '0 0 300 22', preserveAspectRatio: 'none' }, parent);
+  let x = 0;
+  frac.forEach((f, i) => { el('rect', { x: x * 300, y: 3, width: f * 300, height: 16, fill: [C.q, C.err, '#5d6670'][i] }, svg); x += f; });
+  for (const t of ticks) el('line', { x1: t * 300, x2: t * 300, y1: 0, y2: 22, stroke: C.ink, 'stroke-width': 2 }, svg);
+}
+function drawBars() {
+  const box = $('bars');
+  box.replaceChildren();
+  const any = S.last.min || S.last.usd;
+  if (!any) { box.innerHTML = '<p class="note">No measurement yet.</p>'; return; }
+  for (const k of ['min', 'usd']) {
+    const r = S.last[k];
+    if (!r) continue;
+    const row = document.createElement('div'); row.className = 'barrow';
+    const lab = document.createElement('span');
+    lab.textContent = k === 'min' ? `Minimum-error, beta = ${r.beta} deg` : 'Unambiguous (IDP)';
+    row.appendChild(lab);
+    const pred = k === 'min' ? [r.pred] : [1 - r.s];
+    bar(row, r.frac, pred);
+    box.appendChild(row);
+    const note = document.createElement('p'); note.className = 'note';
+    note.textContent = `s = ${r.s.toFixed(2)}, p = ${r.p.toFixed(2)}: P_corr = ${f3(r.frac[0])}, P_err = ${f3(r.frac[1])}, P_? = ${f3(r.frac[2])}.`;
+    box.appendChild(note);
+  }
+}
+
+// ---------- tiles ----------
+function drawTiles() {
+  const r = S.last[S.mode];
+  const cur = r && r.s === S.s && r.p === S.p && (S.mode === 'usd' || r.beta === S.beta);
+  $('sP').textContent = cur ? f3(r.frac[0]) : '-';
+  $('sPn').textContent = cur ? `+- ${f3(r.se)} (1 sigma); P_err = ${f3(r.frac[1])}` : 'not measured at this setting';
+  $('sE').textContent = S.mode === 'min' ? f3(Pb(S.beta * D)) : f3(1 - S.s);
+  $('sEn').textContent = S.mode === 'min' ? `beta = ${S.beta} deg` : 'Eq. (4), P_err = 0';
+  $('sH').textContent = f3(PH());
+  $('sHn').textContent = `at beta = ${optBeta().toFixed(1)} deg`;
+  $('sG').textContent = f3(guess());
+}
+
+function sync() {
+  $('beta').value = S.beta;
+  $('betaOut').textContent = `${S.beta} deg`;
+  $('beta').disabled = S.mode !== 'min';
+  if (S.vmode && S.vmode !== S.mode) $('verdict').textContent = '';
+  drawBloch(); drawPlot(); drawTiles(); drawBars();
+}
+
+async function measure() {
+  if (S.busy || !S.ready) return;
+  if (S.ionq && S.ranOnce) { setStatus('This backend allows one job per run. Stop and Run to measure again.', true); return; }
+  S.busy = true; $('measure').disabled = true;
+  setStatus('Running the circuit...');
+  try {
+    const r = JSON.parse(String(await app.measure.callPromising(backend, theta(), S.beta * D, S.mode)));
+    S.ranOnce = true; S.ionq = r.ionq;
+    const n = r.shots, w = [S.p, 1 - S.p];
+    const frac = [0, 1, 2].map((j) => w[0] * r.tally[0][j] / n + w[1] * r.tally[1][j] / n);
+    const q = r.tally.map((t) => t[0] / n);
+    const se = Math.sqrt((w[0] ** 2 * q[0] * (1 - q[0]) + w[1] ** 2 * q[1] * (1 - q[1])) / n);
+    const pred = S.mode === 'min' ? Pb(S.beta * D) : 1 - S.s;
+    S.last[S.mode] = { s: S.s, p: S.p, beta: S.beta, frac, se, pred };
+    if (S.mode === 'min') S.pts.push({ s: S.s, p: S.p, beta: S.beta, P: frac[0], se });
+    $('circuit').textContent = r.drawing;
+    $('circNote').textContent = `${r.qubits} qubits, depth ${r.depth}, ${r.cx} two-qubit gates after transpiling, ${n} shots per state on ${r.backend}, ${r.seconds.toFixed(2)} s.`;
+    S.vmode = S.mode;
+    const z = se > 0 ? Math.abs(frac[0] - pred) / se : 0;
+    if (S.mode === 'min') {
+      const gap = PH() - frac[0];
+      $('verdict').textContent = `P_corr = ${f3(frac[0])} +- ${f3(se)} at beta = ${S.beta} deg (Eq. 2: ${f3(pred)}, ${z.toFixed(1)} sigma). Helstrom bound ${f3(PH())}${gap < 0 ? ` (exceeded by ${f3(-gap)}, ${(-gap / se).toFixed(1)} sigma)` : `; gap ${f3(gap)}`}. Guessing ${f3(guess())}.`;
+    } else {
+      $('verdict').textContent = `IDP: P_corr = ${f3(frac[0])}, P_err = ${f3(frac[1])}, P_? = ${f3(frac[2])} (Eq. 4: ${f3(1 - S.s)}, 0, ${f3(S.s)}). Helstrom: P_corr = ${f3(PH())}, P_err = ${f3(1 - PH())}.`;
+    }
+    setStatus(S.ionq ? 'Done. This backend allows one job per run; Stop and Run to measure again.' : 'Done.');
+  } catch (e) {
+    console.log('measure error: ' + e);
+    setStatus('The circuit did not run: ' + e, true);
+  }
+  S.busy = false;
+  $('measure').disabled = S.ionq && S.ranOnce;
+  sync();
+}
+
+// ---------- controls ----------
+document.querySelectorAll('#app input[name=s]').forEach((r) => r.addEventListener('change', () => { S.s = +r.value; sync(); }));
+document.querySelectorAll('#app input[name=p]').forEach((r) => r.addEventListener('change', () => { S.p = +r.value; sync(); }));
+document.querySelectorAll('#app input[name=mode]').forEach((r) => r.addEventListener('change', () => { S.mode = r.value; sync(); }));
+$('beta').addEventListener('input', () => { S.beta = +$('beta').value; sync(); });
+$('showOpt').addEventListener('change', sync);
+$('measure').addEventListener('click', measure);
+function pick(name, i) {
+  const rs = [...document.querySelectorAll(`#app input[name=${name}]`)];
+  const r = rs[(i + rs.length) % rs.length]; r.checked = true; r.dispatchEvent(new Event('change'));
+}
+document.addEventListener('keydown', (e) => {
+  if (e.target.closest && e.target.closest('input[type=range]')) { if (e.key === 'Enter') measure(); return; }
+  if (e.altKey || e.ctrlKey || e.metaKey) return;
+  const idx = (name) => [...document.querySelectorAll(`#app input[name=${name}]`)].findIndex((r) => r.checked);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    if (S.mode !== 'min') return;
+    S.beta = Math.min(180, Math.max(0, S.beta + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 10 : 1)));
+    sync(); e.preventDefault();
+  } else if (e.key === 'Enter' && !(e.target.tagName === 'BUTTON')) { measure(); }
+  else if (['1', '2', '3'].includes(e.key)) pick('s', +e.key - 1);
+  else if (e.key === 'p' || e.key === 'P') pick('p', idx('p') + 1);
+  else if (e.key === 'u' || e.key === 'U') pick('mode', idx('mode') + 1);
+  else if (e.key === 'o' || e.key === 'O') { $('showOpt').checked = !$('showOpt').checked; sync(); }
+});
+
+// Typeset equations with KaTeX from the CDN; the HTML versions remain if it cannot load.
+import('https://cdn.jsdelivr.net/npm/katex@0.16.11/+esm').then(({ default: katex }) => {
+  document.querySelectorAll('#app .eq[data-tex]').forEach((x) => {
+    try { katex.render(x.dataset.tex, x.firstElementChild, { displayMode: true, throwOnError: false, output: 'html' }); } catch (e) { /* keep HTML */ }
+  });
+  document.querySelectorAll('#app .m[data-tex]').forEach((x) => {
+    try { katex.render(x.dataset.tex, x, { displayMode: false, throwOnError: false, output: 'html' }); } catch (e) { /* keep HTML */ }
+  });
+}).catch(() => {});
+
+// ---------- start ----------
+bindDrag();
+sync();
+S.ready = true;
+$('measure').disabled = false;
+setStatus(`Ready. Backend: ${backend?.name ?? backend}.`);
+console.log(`Lockpick ready. Backend: ${backend?.name ?? backend}`);
+</script>
+</body></html>
